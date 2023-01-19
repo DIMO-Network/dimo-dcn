@@ -1,166 +1,71 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "./DCN.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 /**
  * The DCN registry contract.
  */
-contract DCNRegistry is DCN {
+contract DCNRegistry is
+    Initializable,
+    ERC721Upgradeable,
+    AccessControlUpgradeable,
+    UUPSUpgradeable
+{
+    bytes32 constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+
+    // Logged when the resolver for a node changes.
+    event NewResolver(bytes32 indexed node, address resolver);
+
+    // Logged when the TTL of a node changes
+    event NewTTL(bytes32 indexed node, uint72 ttl);
+
     struct Record {
-        address owner;
         address resolver;
-        uint64 ttl;
+        uint72 ttl;
     }
 
+    address public defaultResolver;
     mapping(bytes32 => Record) records;
-    mapping(address => mapping(address => bool)) operators;
 
     // Permits modifications only by the owner of the specified node.
-    modifier authorised(bytes32 node) {
-        address owner = records[node].owner;
-        require(owner == msg.sender || operators[owner][msg.sender]);
+    modifier authorized(bytes32 node) {
+        require(_isApprovedOrOwner(msg.sender, uint256(node)));
         _;
     }
 
-    /**
-     * @dev Constructs a new DCN registry.
-     */
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
-        records[0x0].owner = msg.sender;
+        _disableInitializers();
     }
 
-    /**
-     * @dev Sets the record for a node.
-     * @param node The node to update.
-     * @param owner The address of the new owner.
-     * @param resolver The address of the resolver.
-     * @param ttl The TTL in seconds.
-     */
-    function setRecord(
-        bytes32 node,
-        address owner,
-        address resolver,
-        uint64 ttl
-    ) external virtual override {
-        setOwner(node, owner);
-        _setResolverAndTTL(node, resolver, ttl);
+    function initialize(
+        string calldata _name,
+        string calldata _symbol,
+        address _defaultResolver
+    ) external initializer {
+        // records[0x0].owner = msg.sender;
+        __ERC721_init_unchained(_name, _symbol);
+        __AccessControl_init_unchained();
+        __UUPSUpgradeable_init_unchained();
+
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+
+        defaultResolver = _defaultResolver;
+
+        _mint(msg.sender, uint256(0x00));
+        _setRecord(0x00, address(0), ~uint72(0));
     }
 
-    /**
-     * @dev Sets the record for a subnode.
-     * @param node The parent node.
-     * @param label The hash of the label specifying the subnode.
-     * @param owner The address of the new owner.
-     * @param resolver The address of the resolver.
-     * @param ttl The TTL in seconds.
-     */
-    function setSubnodeRecord(
-        bytes32 node,
-        bytes32 label,
-        address owner,
-        address resolver,
-        uint64 ttl
-    ) external virtual override {
-        bytes32 subnode = setSubnodeOwner(node, label, owner);
-        _setResolverAndTTL(subnode, resolver, ttl);
-    }
-
-    /**
-     * @dev Transfers ownership of a node to a new address. May only be called by the current owner of the node.
-     * @param node The node to transfer ownership of.
-     * @param owner The address of the new owner.
-     */
-    function setOwner(bytes32 node, address owner)
-        public
-        virtual
-        override
-        authorised(node)
-    {
-        _setOwner(node, owner);
-        emit Transfer(node, owner);
-    }
-
-    /**
-     * @dev Transfers ownership of a subnode keccak256(node, label) to a new address. May only be called by the owner of the parent node.
-     * @param node The parent node.
-     * @param label The hash of the label specifying the subnode.
-     * @param owner The address of the new owner.
-     */
-    function setSubnodeOwner(
-        bytes32 node,
-        bytes32 label,
-        address owner
-    ) public virtual override authorised(node) returns (bytes32) {
-        bytes32 subnode = keccak256(abi.encodePacked(node, label));
-        _setOwner(subnode, owner);
-        emit NewOwner(node, label, owner);
-        return subnode;
-    }
-
-    /**
-     * @dev Sets the resolver address for the specified node.
-     * @param node The node to update.
-     * @param resolver The address of the resolver.
-     */
-    function setResolver(bytes32 node, address resolver)
-        public
-        virtual
-        override
-        authorised(node)
-    {
-        emit NewResolver(node, resolver);
-        records[node].resolver = resolver;
-    }
-
-    /**
-     * @dev Sets the TTL for the specified node.
-     * @param node The node to update.
-     * @param ttl The TTL in seconds.
-     */
-    function setTTL(bytes32 node, uint64 ttl)
-        public
-        virtual
-        override
-        authorised(node)
-    {
-        emit NewTTL(node, ttl);
-        records[node].ttl = ttl;
-    }
-
-    /**
-     * @dev Enable or disable approval for a third party ("operator") to manage
-     *  all of `msg.sender`'s DCN records. Emits the ApprovalForAll event.
-     * @param operator Address to add to the set of authorized operators.
-     * @param approved True if the operator is approved, false to revoke approval.
-     */
-    function setApprovalForAll(address operator, bool approved)
-        external
-        virtual
-        override
-    {
-        operators[msg.sender][operator] = approved;
-        emit ApprovalForAll(msg.sender, operator, approved);
-    }
-
-    /**
-     * @dev Returns the address that owns the specified node.
-     * @param node The specified node.
-     * @return address of the owner.
-     */
-    function owner(bytes32 node)
-        public
-        view
-        virtual
-        override
-        returns (address)
-    {
-        address addr = records[node].owner;
-        if (addr == address(this)) {
-            return address(0x0);
-        }
-
-        return addr;
+    function setDefaultResolver(
+        address _resolver
+    ) external onlyRole(ADMIN_ROLE) {
+        require(_resolver != address(0), "Zero address");
+        defaultResolver = _resolver;
     }
 
     /**
@@ -168,14 +73,11 @@ contract DCNRegistry is DCN {
      * @param node The specified node.
      * @return address of the resolver.
      */
-    function resolver(bytes32 node)
-        public
-        view
-        virtual
-        override
-        returns (address)
-    {
-        return records[node].resolver;
+    function resolver(bytes32 node) external view returns (address) {
+        return
+            records[node].resolver == address(0)
+                ? defaultResolver
+                : records[node].resolver;
     }
 
     /**
@@ -183,7 +85,7 @@ contract DCNRegistry is DCN {
      * @param node The specified node.
      * @return ttl of the node.
      */
-    function ttl(bytes32 node) public view virtual override returns (uint64) {
+    function ttl(bytes32 node) external view returns (uint72) {
         return records[node].ttl;
     }
 
@@ -192,49 +94,106 @@ contract DCNRegistry is DCN {
      * @param node The specified node.
      * @return Bool if record exists
      */
-    function recordExists(bytes32 node)
+    function recordExists(bytes32 node) external view returns (bool) {
+        return _exists(uint256(node));
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    )
         public
         view
-        virtual
-        override
+        override(ERC721Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
-        return records[node].owner != address(0x0);
+        return super.supportsInterface(interfaceId);
+    }
+
+    // TODO Documentation
+    function _mintWithRecords(
+        address to,
+        string[] calldata labels,
+        address _resolver,
+        uint72 _ttl
+    ) internal {
+        (bytes32 node, ) = _validateNamehash(labels);
+
+        _mint(to, uint256(node));
+        _setRecord(node, _resolver, _ttl);
     }
 
     /**
-     * @dev Query if an address is an authorized operator for another address.
-     * @param owner The address that owns the records.
-     * @param operator The address that acts on behalf of the owner.
-     * @return True if `operator` is an approved operator for `owner`, false otherwise.
+     * @dev Sets the resolver address for the specified node.
+     * @param node The node to update.
+     * @param _resolver The address of the resolver.
      */
-    function isApprovedForAll(address owner, address operator)
-        external
-        view
-        virtual
-        override
-        returns (bool)
-    {
-        return operators[owner][operator];
-    }
-
-    function _setOwner(bytes32 node, address owner) internal virtual {
-        records[node].owner = owner;
-    }
-
-    function _setResolverAndTTL(
+    function _setResolver(
         bytes32 node,
-        address resolver,
-        uint64 ttl
-    ) internal {
-        if (resolver != records[node].resolver) {
-            records[node].resolver = resolver;
-            emit NewResolver(node, resolver);
+        address _resolver
+    ) internal authorized(node) {
+        emit NewResolver(node, _resolver);
+        records[node].resolver = _resolver;
+    }
+
+    /**
+     * @dev Sets the TTL for the specified node.
+     * @param node The node to update.
+     * @param _ttl The TTL in seconds.
+     */
+    function _setTTL(bytes32 node, uint72 _ttl) internal authorized(node) {
+        emit NewTTL(node, _ttl);
+        records[node].ttl = _ttl;
+    }
+
+    /**
+     * @dev Sets the record for a node.
+     * @param node The node to update.
+     * @param _resolver The address of the resolver.
+     * @param _ttl The TTL in seconds.
+     */
+    function _setRecord(bytes32 node, address _resolver, uint72 _ttl) internal {
+        if (_resolver != records[node].resolver) {
+            records[node].resolver = _resolver;
+            emit NewResolver(node, _resolver);
         }
 
-        if (ttl != records[node].ttl) {
-            records[node].ttl = ttl;
-            emit NewTTL(node, ttl);
+        if (_ttl != records[node].ttl) {
+            records[node].ttl = _ttl;
+            emit NewTTL(node, _ttl);
+        }
+    }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(UPGRADER_ROLE) {}
+
+    function _namehash(
+        bytes32 node,
+        string calldata label
+    ) private pure returns (bytes32) {
+        require(bytes(label).length != 0, "Empty label");
+        return
+            keccak256(
+                abi.encodePacked(node, keccak256(abi.encodePacked(label)))
+            );
+    }
+
+    function _namehash(
+        string[] calldata labels
+    ) private pure returns (bytes32 node, bytes32 parentNode) {
+        for (uint256 i = labels.length; i > 0; i--) {
+            parentNode = node;
+            node = _namehash(parentNode, labels[i - 1]);
+        }
+    }
+
+    function _validateNamehash(
+        string[] calldata labels
+    ) private view returns (bytes32 node, bytes32 parentNode) {
+        for (uint256 i = labels.length; i > 0; i--) {
+            require(_exists(uint256(node)), "Parent node does not exist");
+            parentNode = node;
+            node = _namehash(parentNode, labels[i - 1]);
         }
     }
 }
