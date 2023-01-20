@@ -1,11 +1,11 @@
-// @author Unstoppable Domains, Inc.
-// @date June 16th, 2021
-
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+
+import "./IDCNRegistry.sol";
 
 contract DCNMinter is Initializable, AccessControlUpgradeable, UUPSUpgradeable {
     bytes32 constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
