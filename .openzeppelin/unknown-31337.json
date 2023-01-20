@@ -8,7 +8,7 @@
     },
     {
       "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-      "txHash": "0xb5ee25ee551d4836e543edcae74e50b70b41d40f8e5cd7372b3cd9f5f011b511",
+      "txHash": "0x179f2b6275badd92bd126d86061fb9312b8085f3001b485e4d6c105147fa7d23",
       "kind": "uups"
     }
   ],
@@ -269,9 +269,9 @@
         }
       }
     },
-    "a24902cc43be4d690eee11bddef6c780bd61088e17711a12aef5161c27cd5644": {
+    "f749a98f9fc5cd666e1cafc03439320cac00e31c76bb456750e0648cbae6c0fb": {
       "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-      "txHash": "0x671a99a01873612de2f8e472b11814ab8335b7541ae2083c0ebc2b097a40a34f",
+      "txHash": "0x1b4bc3b5e085ec1e5863acf97aa7552cc4a9dbe611cd5ffc7d0a9d272b515bc2",
       "layout": {
         "solcVersion": "0.8.17",
         "storage": [
@@ -402,7 +402,7 @@
             "slot": "301",
             "type": "t_string_storage",
             "contract": "DCNRegistry",
-            "src": "contracts/DCNRegistry.sol:35"
+            "src": "contracts/DCNRegistry.sol:79"
           },
           {
             "label": "defaultResolver",
@@ -410,15 +410,15 @@
             "slot": "302",
             "type": "t_address",
             "contract": "DCNRegistry",
-            "src": "contracts/DCNRegistry.sol:36"
+            "src": "contracts/DCNRegistry.sol:80"
           },
           {
             "label": "records",
             "offset": 0,
             "slot": "303",
-            "type": "t_mapping(t_bytes32,t_struct(Record)5633_storage)",
+            "type": "t_mapping(t_bytes32,t_struct(Record)6091_storage)",
             "contract": "DCNRegistry",
-            "src": "contracts/DCNRegistry.sol:37"
+            "src": "contracts/DCNRegistry.sol:81"
           }
         ],
         "types": {
@@ -458,7 +458,7 @@
             "label": "mapping(address => uint256)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_bytes32,t_struct(Record)5633_storage)": {
+          "t_mapping(t_bytes32,t_struct(Record)6091_storage)": {
             "label": "mapping(bytes32 => struct DCNRegistry.Record)",
             "numberOfBytes": "32"
           },
@@ -474,7 +474,7 @@
             "label": "string",
             "numberOfBytes": "32"
           },
-          "t_struct(Record)5633_storage": {
+          "t_struct(Record)6091_storage": {
             "label": "struct DCNRegistry.Record",
             "members": [
               {

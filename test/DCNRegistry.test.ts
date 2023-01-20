@@ -2,12 +2,13 @@ import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { ethers, upgrades } from 'hardhat';
 
-import { C, initialize } from '../utils';
+import { C, initialize, namehash } from '../utils';
 import { DCNRegistry } from '../typechain-types';
 
 describe('DCNRegistry', function () {
   async function deployOneYearLockFixture() {
     const TTL_1_YEAR = (Date.parse(Date()) / 1000 + 60 * 60 * 24 * 365).toString();
+    const TTL_2_YEAR = (Date.parse(Date()) / 1000 + 60 * 60 * 24 * 365 * 2).toString();
 
     const [deployer, admin, nonAdmin, user1] = await ethers.getSigners();
 
@@ -28,7 +29,10 @@ describe('DCNRegistry', function () {
       }
     ) as DCNRegistry;
 
-    return { deployer, admin, nonAdmin, user1, dcnRegistry, resolverInstance, TTL_1_YEAR };
+    await dcnRegistry.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
+    await dcnRegistry.connect(deployer).grantRole(C.MINTER_ROLE, admin.address);
+
+    return { deployer, admin, nonAdmin, user1, dcnRegistry, resolverInstance, TTL_1_YEAR, TTL_2_YEAR };
   }
 
   describe('initialize', () => {
@@ -93,8 +97,7 @@ describe('DCNRegistry', function () {
 
     context('State', async () => {
       it('Should correctly set the base URI', async () => {
-        const { deployer, admin, dcnRegistry } = await loadFixture(deployOneYearLockFixture);
-        await dcnRegistry.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
+        const { admin, dcnRegistry } = await loadFixture(deployOneYearLockFixture);
 
         await dcnRegistry.connect(admin).setBaseURI(newBaseURI);
 
@@ -104,8 +107,7 @@ describe('DCNRegistry', function () {
 
     context('Events', () => {
       it('Should emit NewBaseURI event with correct params', async () => {
-        const { deployer, admin, dcnRegistry } = await loadFixture(deployOneYearLockFixture);
-        await dcnRegistry.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
+        const { admin, dcnRegistry } = await loadFixture(deployOneYearLockFixture);
 
         await expect(
           dcnRegistry
@@ -135,8 +137,7 @@ describe('DCNRegistry', function () {
         );
       });
       it('Should revert if new default resolver is the zero address', async () => {
-        const { deployer, admin, dcnRegistry } = await loadFixture(deployOneYearLockFixture);
-        await dcnRegistry.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
+        const { admin, dcnRegistry } = await loadFixture(deployOneYearLockFixture);
 
         await expect(
           dcnRegistry
@@ -148,8 +149,7 @@ describe('DCNRegistry', function () {
 
     context('State', () => {
       it('Should correctly set the new default resolver', async () => {
-        const { deployer, admin, dcnRegistry } = await loadFixture(deployOneYearLockFixture);
-        await dcnRegistry.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
+        const { admin, dcnRegistry } = await loadFixture(deployOneYearLockFixture);
 
         await dcnRegistry.connect(admin).setDefaultResolver(newDefaultResolver);
 
@@ -159,8 +159,7 @@ describe('DCNRegistry', function () {
 
     context('Events', () => {
       it('Should emit NewBaseURI event with correct params', async () => {
-        const { deployer, admin, dcnRegistry } = await loadFixture(deployOneYearLockFixture);
-        await dcnRegistry.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
+        const { admin, dcnRegistry } = await loadFixture(deployOneYearLockFixture);
 
         await expect(
           dcnRegistry
@@ -188,8 +187,7 @@ describe('DCNRegistry', function () {
         );
       });
       it('Should revert if parent node does not exist', async () => {
-        const { deployer, admin, user1, dcnRegistry, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
-        await dcnRegistry.connect(deployer).grantRole(C.MINTER_ROLE, admin.address);
+        const { admin, user1, dcnRegistry, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
 
         await expect(
           dcnRegistry
@@ -200,130 +198,335 @@ describe('DCNRegistry', function () {
     });
 
     context('State change', () => {
-      it('Should mint token to the specified owner', async () => {});
-      it('Should register resolver as zero address if no resolver is set', async () => { });
-      it('Should register resolver if resolver is set', async () => { });
-      it('Should register ttl', async () => { });
+      const mockTldNamehash = namehash(C.MOCK_TLD);
+
+      it('Should mint token to the specified owner', async () => {
+        const tokenId = ethers.BigNumber.from(mockTldNamehash).toString();
+        const { admin, dcnRegistry, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR);
+
+        expect(await dcnRegistry.ownerOf(tokenId)).to.equal(admin.address);
+      });
+      it('Should register resolver the default resolver if no resolver is set', async () => {
+        const { admin, dcnRegistry, resolverInstance, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR);
+
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
+      });
+      it('Should register resolver if resolver is set', async () => {
+        const newResolver = ethers.Wallet.createRandom().address;
+        const { admin, dcnRegistry, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], newResolver, TTL_1_YEAR);
+
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(newResolver);
+      });
+      it('Should register ttl', async () => {
+        const { admin, dcnRegistry, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR);
+
+        expect(await dcnRegistry.ttl(mockTldNamehash)).to.equal(TTL_1_YEAR);
+      });
     });
 
     context('Events', () => {
-      it('Should emit NewResolver event with correct params', async () => { });
-      it('Should emit NewTTL event with correct params', async () => { });
+      it('Should emit NewResolver event with correct params', async () => {
+        const mockTldNamehash = namehash(C.MOCK_TLD);
+        const { admin, dcnRegistry, resolverInstance, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await expect(
+          dcnRegistry
+            .connect(admin)
+            .mint(admin.address, [C.MOCK_TLD], resolverInstance.address, TTL_1_YEAR)
+        )
+          .to.emit(dcnRegistry, 'NewResolver')
+          .withArgs(mockTldNamehash, resolverInstance.address);
+      });
+      it('Should emit NewTTL event with correct params', async () => {
+        const mockTldNamehash = namehash(C.MOCK_TLD);
+        const { admin, dcnRegistry, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await expect(
+          dcnRegistry
+            .connect(admin)
+            .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR)
+        )
+          .to.emit(dcnRegistry, 'NewTTL')
+          .withArgs(mockTldNamehash, TTL_1_YEAR);
+      });
     });
   });
 
   describe('setRecord', () => {
     context('Error handling', () => {
-      it('Should revert if caller does not have the ADMIN_ROLE', async () => {});
-      it('Should revert if record does not exist', async () => { });
+      it('Should revert if caller does not have the ADMIN_ROLE', async () => {
+        const mockTldNamehash = namehash(C.MOCK_TLD);
+        const { nonAdmin, dcnRegistry, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await expect(
+          dcnRegistry
+            .connect(nonAdmin)
+            .setRecord(mockTldNamehash, C.ZERO_ADDRESS, TTL_1_YEAR)
+        ).to.be.revertedWith(
+          `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.ADMIN_ROLE
+          }`
+        );
+      });
+      it('Should revert if record does not exist', async () => {
+        const mockTldNamehash = namehash(C.MOCK_TLD);
+        const { admin, dcnRegistry, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await expect(
+          dcnRegistry
+            .connect(admin)
+            .setRecord(mockTldNamehash, C.ZERO_ADDRESS, TTL_1_YEAR)
+        ).to.be.revertedWith('Node does not exist');
+      });
     });
 
     context('State change', () => {
-      it('Should register resolver as zero address if no resolver is set', async () => { });
-      it('Should register resolver if resolver is set', async () => { });
-      it('Should register ttl', async () => { });
+      const mockTldNamehash = namehash(C.MOCK_TLD);
+
+      it('Should register resolver the default resolver if no resolver is set', async () => {
+        const newResolver = ethers.Wallet.createRandom().address;
+        const { admin, dcnRegistry, resolverInstance, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], newResolver, TTL_1_YEAR);
+
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(newResolver);
+
+        await dcnRegistry
+          .connect(admin)
+          .setRecord(mockTldNamehash, C.ZERO_ADDRESS, TTL_1_YEAR)
+
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
+      });
+      it('Should register resolver if resolver is set', async () => {
+        const newResolver = ethers.Wallet.createRandom().address;
+        const { admin, dcnRegistry, resolverInstance, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR);
+
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
+
+        await dcnRegistry
+          .connect(admin)
+          .setRecord(mockTldNamehash, newResolver, TTL_1_YEAR)
+
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(newResolver);
+      });
+      it('Should register ttl', async () => {
+        const { admin, dcnRegistry, TTL_1_YEAR, TTL_2_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR);
+
+        expect(await dcnRegistry.ttl(mockTldNamehash)).to.equal(TTL_1_YEAR);
+
+        await dcnRegistry
+          .connect(admin)
+          .setRecord(mockTldNamehash, C.ZERO_ADDRESS, TTL_2_YEAR)
+
+        expect(await dcnRegistry.ttl(mockTldNamehash)).to.equal(TTL_2_YEAR);
+      });
     });
 
     context('Events', () => {
-      it('Should emit NewResolver event with correct params', async () => { });
-      it('Should emit NewTTL event with correct params', async () => { });
+      const mockTldNamehash = namehash(C.MOCK_TLD);
+
+      it('Should emit NewResolver event with correct params', async () => {
+        const newResolver = ethers.Wallet.createRandom().address;
+        const { admin, dcnRegistry, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR);
+
+        await expect(
+          dcnRegistry
+            .connect(admin)
+            .setRecord(mockTldNamehash, newResolver, TTL_1_YEAR)
+        )
+          .to.emit(dcnRegistry, 'NewResolver')
+          .withArgs(mockTldNamehash, newResolver);
+      });
+      it('Should emit NewTTL event with correct params', async () => {
+        const { admin, dcnRegistry, TTL_1_YEAR, TTL_2_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR);
+
+        await expect(
+          dcnRegistry
+            .connect(admin)
+            .setRecord(mockTldNamehash, C.ZERO_ADDRESS, TTL_2_YEAR)
+        )
+          .to.emit(dcnRegistry, 'NewTTL')
+          .withArgs(mockTldNamehash, TTL_2_YEAR);
+      });
     });
   });
 
   describe('setResolver', () => {
+    const mockTldNamehash = namehash(C.MOCK_TLD);
+
     context('Error handling', () => {
-      it('Should revert if caller does not have the ADMIN_ROLE', async () => { });
-      it('Should revert if record does not exist', async () => { });
+      it('Should revert if caller does not have the ADMIN_ROLE', async () => {
+        const { nonAdmin, dcnRegistry } = await loadFixture(deployOneYearLockFixture);
+
+        await expect(
+          dcnRegistry
+            .connect(nonAdmin)
+            .setResolver(mockTldNamehash, C.ZERO_ADDRESS)
+        ).to.be.revertedWith(
+          `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.ADMIN_ROLE
+          }`
+        );
+      });
+      it('Should revert if record does not exist', async () => {
+        const { admin, dcnRegistry } = await loadFixture(deployOneYearLockFixture);
+
+        await expect(
+          dcnRegistry
+            .connect(admin)
+            .setResolver(mockTldNamehash, C.ZERO_ADDRESS)
+        ).to.be.revertedWith('Node does not exist');
+      });
     });
 
     context('State change', () => {
-      it('Should register resolver as zero address if no resolver is set', async () => { });
-      it('Should register resolver if resolver is set', async () => { });
+      const newResolver = ethers.Wallet.createRandom().address;
+
+      it('Should register resolver the default resolver if no resolver is set', async () => {
+        const { admin, dcnRegistry, resolverInstance, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], newResolver, TTL_1_YEAR);
+
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(newResolver);
+
+        await dcnRegistry
+          .connect(admin)
+          .setResolver(mockTldNamehash, C.ZERO_ADDRESS)
+
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
+      });
+      it('Should register resolver if resolver is set', async () => {
+        const { admin, dcnRegistry, resolverInstance, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR);
+
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
+
+        await dcnRegistry
+          .connect(admin)
+          .setResolver(mockTldNamehash, newResolver)
+
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(newResolver);
+      });
     });
 
     context('Events', () => {
-      it('Should emit NewResolver event with correct params', async () => { });
+      it('Should emit NewResolver event with correct params', async () => {
+        const newResolver = ethers.Wallet.createRandom().address;
+        const { admin, dcnRegistry, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR);
+
+        await expect(
+          dcnRegistry
+            .connect(admin)
+            .setResolver(mockTldNamehash, newResolver)
+        )
+          .to.emit(dcnRegistry, 'NewResolver')
+          .withArgs(mockTldNamehash, newResolver);
+      });
     });
   });
 
   describe('setTTL', () => {
+    const mockTldNamehash = namehash(C.MOCK_TLD);
+
     context('Error handling', () => {
-      it('Should revert if caller does not have the ADMIN_ROLE', async () => { });
-      it('Should revert if record does not exist', async () => { });
+      it('Should revert if caller does not have the ADMIN_ROLE', async () => {
+        const { nonAdmin, dcnRegistry, TTL_2_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await expect(
+          dcnRegistry
+            .connect(nonAdmin)
+            .setTTL(mockTldNamehash, TTL_2_YEAR)
+        ).to.be.revertedWith(
+          `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.ADMIN_ROLE
+          }`
+        );
+      });
+      it('Should revert if record does not exist', async () => {
+        const { admin, dcnRegistry, TTL_2_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await expect(
+          dcnRegistry
+            .connect(admin)
+            .setTTL(mockTldNamehash, TTL_2_YEAR)
+        ).to.be.revertedWith('Node does not exist');
+      });
     });
 
     context('State change', () => {
-      it('Should register ttl', async () => { });
+      it('Should register ttl', async () => {
+        const { admin, dcnRegistry, TTL_1_YEAR, TTL_2_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR);
+
+        expect(await dcnRegistry.ttl(mockTldNamehash)).to.equal(TTL_1_YEAR);
+
+        await dcnRegistry
+          .connect(admin)
+          .setTTL(mockTldNamehash, TTL_2_YEAR)
+
+        expect(await dcnRegistry.ttl(mockTldNamehash)).to.equal(TTL_2_YEAR);
+      });
     });
 
     context('Events', () => {
-      it('Should emit NewTTL event with correct params', async () => { });
+      it('Should emit NewTTL event with correct params', async () => {
+        const { admin, dcnRegistry, TTL_1_YEAR, TTL_2_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await dcnRegistry
+          .connect(admin)
+          .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR);
+
+        await expect(
+          dcnRegistry
+            .connect(admin)
+            .setTTL(mockTldNamehash, TTL_2_YEAR)
+        )
+          .to.emit(dcnRegistry, 'NewTTL')
+          .withArgs(mockTldNamehash, TTL_2_YEAR);
+      });
     });
   });
-
-  // describe('Withdrawals', function () {
-  //   describe('Validations', function () {
-  //     it('Should revert with the right error if called too soon', async function () {
-  //       const { lock } = await loadFixture(deployOneYearLockFixture);
-
-  //       await expect(lock.withdraw()).to.be.revertedWith(
-  //         'You can't withdraw yet'
-  //       );
-  //     });
-
-  //     it('Should revert with the right error if called from another account', async function () {
-  //       const { lock, unlockTime, otherAccount } = await loadFixture(
-  //         deployOneYearLockFixture
-  //       );
-
-  //       // We can increase the time in Hardhat Network
-  //       await time.increaseTo(unlockTime);
-
-  //       // We use lock.connect() to send a transaction from another account
-  //       await expect(lock.connect(otherAccount).withdraw()).to.be.revertedWith(
-  //         'You aren't the owner'
-  //       );
-  //     });
-
-  //     it('Shouldn't fail if the unlockTime has arrived and the owner calls it', async function () {
-  //       const { lock, unlockTime } = await loadFixture(
-  //         deployOneYearLockFixture
-  //       );
-
-  //       // Transactions are sent using the first signer by default
-  //       await time.increaseTo(unlockTime);
-
-  //       await expect(lock.withdraw()).not.to.be.reverted;
-  //     });
-  //   });
-
-  //   describe('Events', function () {
-  //     it('Should emit an event on withdrawals', async function () {
-  //       const { lock, unlockTime, lockedAmount } = await loadFixture(
-  //         deployOneYearLockFixture
-  //       );
-
-  //       await time.increaseTo(unlockTime);
-
-  //       await expect(lock.withdraw())
-  //         .to.emit(lock, 'Withdrawal')
-  //         .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
-  //     });
-  //   });
-
-  //   describe('Transfers', function () {
-  //     it('Should transfer the funds to the owner', async function () {
-  //       const { lock, unlockTime, lockedAmount, owner } = await loadFixture(
-  //         deployOneYearLockFixture
-  //       );
-
-  //       await time.increaseTo(unlockTime);
-
-  //       await expect(lock.withdraw()).to.changeEtherBalances(
-  //         [owner, lock],
-  //         [lockedAmount, -lockedAmount]
-  //       );
-  //     });
-  //   });
-  // });
 });
