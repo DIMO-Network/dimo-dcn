@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "npx hardhat clean && npx hardhat compile",
-    "test": "npx hardhat test"
+    "test": "npx hardhat test",
+    "coverage": "npx hardhat coverage"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,7 @@
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "^4.8.0",
     "@openzeppelin/hardhat-upgrades": "^1.22.1",
-    "@solidstate/contracts": "^0.0.52"
+    "@solidstate/contracts": "^0.0.52",
+    "dotenv": "^16.0.3"
   }
 }

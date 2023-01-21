@@ -195,6 +195,15 @@ describe('DCNRegistry', function () {
             .mint(user1.address, C.MOCK_LABELS, C.ZERO_ADDRESS, TTL_1_YEAR)
         ).to.be.revertedWith('Parent node does not exist');
       });
+      it('Should revert if label is empty', async () => {
+        const { admin, user1, dcnRegistry, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+        await expect(
+          dcnRegistry
+            .connect(admin)
+            .mint(user1.address, [''], C.ZERO_ADDRESS, TTL_1_YEAR)
+        ).to.be.revertedWith('Empty label');
+      });
     });
 
     context('State change', () => {
@@ -527,6 +536,27 @@ describe('DCNRegistry', function () {
           .to.emit(dcnRegistry, 'NewTTL')
           .withArgs(mockTldNamehash, TTL_2_YEAR);
       });
+    });
+  });
+
+  describe('Transferring', () => {
+    it('Should revert if caller does not have the TRANSFERER_ROLE', async () => {
+      const mockTldNamehash = namehash(C.MOCK_TLD);
+      const tokenId = ethers.BigNumber.from(mockTldNamehash).toString();
+      const { admin, user1, dcnRegistry, TTL_1_YEAR } = await loadFixture(deployOneYearLockFixture);
+
+      await dcnRegistry
+        .connect(admin)
+        .mint(admin.address, [C.MOCK_TLD], C.ZERO_ADDRESS, TTL_1_YEAR);
+
+      await expect(
+        dcnRegistry
+          .connect(admin)
+          .transferFrom(admin.address, user1.address, tokenId)
+      ).to.be.revertedWith(
+        `AccessControl: account ${admin.address.toLowerCase()} is missing role ${C.TRANSFERER_ROLE
+        }`
+      );
     });
   });
 });
