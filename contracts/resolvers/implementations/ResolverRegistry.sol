@@ -2,14 +2,14 @@
 pragma solidity ^0.8.13;
 
 import "../storage/RegistryStorage.sol";
+import {DEFAULT_ADMIN_ROLE} from "../shared/Roles.sol";
+import {MANAGER_RESOLVER_ROLE} from "../shared/Roles.sol";
+
 import "@solidstate/contracts/access/access_control/AccessControl.sol";
 
 /// @title ResolverRegistry
 /// @notice Entry point of all calls to Resolvers and resolver-module manager
 contract ResolverRegistry is AccessControl {
-    bytes32 constant DEFAULT_ADMIN_ROLE = 0x00;
-    bytes32 constant MANAGER_RESOLVER_ROLE = keccak256("MANAGER_RESOLVER_ROLE");
-
     event ResolverAdded(address indexed resolverAddr, bytes4[] selectors);
     event ResolverRemoved(address indexed resolverAddr, bytes4[] selectors);
     event ResolverUpdated(

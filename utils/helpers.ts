@@ -16,7 +16,6 @@ function _namehash(labels: string[]): string {
     return node;
 }
 
-export function namehash(inputName: string): string;
 export function namehash(inputName: string | string[]): string {
     let labels: string[] = [];
 

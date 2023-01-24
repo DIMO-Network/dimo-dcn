@@ -34,7 +34,7 @@ contract DCNRegistry is
     // Permits modifications only by the owner of the specified node.
     modifier authorized(bytes32 node) {
         require(
-            hasRole(MINTER_ROLE, msg.sender) ||
+            hasRole(ADMIN_ROLE, msg.sender) ||
                 _isApprovedOrOwner(msg.sender, uint256(node))
         );
         _;
@@ -50,7 +50,7 @@ contract DCNRegistry is
     /// @notice Initialize function to be called after deployment
     /// @param _name Token name
     /// @param _symbol Token symbol
-    /// @param baseURI_ Dase URI
+    /// @param baseURI_ Base URI
     /// @param _defaultResolver Default resolver
     function initialize(
         string calldata _name,
@@ -227,7 +227,7 @@ contract DCNRegistry is
         address _resolver,
         uint72 _ttl
     ) internal {
-        (bytes32 node, ) = _validateNamehash(labels);
+        bytes32 node = _validateNamehash(labels);
 
         _mint(to, uint256(node));
         _setRecord(node, _resolver, _ttl);
@@ -276,27 +276,27 @@ contract DCNRegistry is
     /// @dev Calculates the name hash of a label given the parent node
     /// @param node Parent node hash
     /// @param label Label to be hashed
+    /// @return hashed Hashed label
     function _namehash(
         bytes32 node,
         string calldata label
-    ) private pure returns (bytes32) {
+    ) private pure returns (bytes32 hashed) {
         require(bytes(label).length != 0, "Empty label");
-        return
-            keccak256(
-                abi.encodePacked(node, keccak256(abi.encodePacked(label)))
-            );
+        hashed = keccak256(
+            abi.encodePacked(node, keccak256(abi.encodePacked(label)))
+        );
     }
 
     /// @dev Iteratively Calculates the name hash of a list of labels
     /// @dev Verifies if parent node exists
     /// @param labels List of labels to be hashed
+    /// @return node The hashed node
     function _validateNamehash(
         string[] calldata labels
-    ) private view returns (bytes32 node, bytes32 parentNode) {
+    ) private view returns (bytes32 node) {
         for (uint256 i = labels.length; i > 0; i--) {
             require(_exists(uint256(node)), "Parent node does not exist");
-            parentNode = node;
-            node = _namehash(parentNode, labels[i - 1]);
+            node = _namehash(node, labels[i - 1]);
         }
     }
 }
