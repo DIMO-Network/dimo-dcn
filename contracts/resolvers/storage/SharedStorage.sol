@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "../../interfaces/IDimo.sol";
+import "../../interfaces/IDCNManager.sol";
 
 /// @title SharedStorage
 /// @notice Storage of for shared data
@@ -12,6 +13,7 @@ library SharedStorage {
     struct Storage {
         address foundation;
         IDimo dimoToken;
+        IDCNManager dcnManager;
     }
 
     /* solhint-disable no-inline-assembly */

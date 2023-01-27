@@ -40,7 +40,7 @@ contract VehicleIdResolver is AccessControlInternal {
         
         VehicleIdStorage.getStorage().vehicleIds[node] = _vehicleId;
         emit VehicleIdChanged(node, _vehicleId);
-    }
+    }    
 
     /// @notice Returns the address associated with an ENS node
     /// @param node The ENS node to query
