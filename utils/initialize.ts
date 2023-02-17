@@ -27,7 +27,7 @@ export async function initialize(
 
     await resolver
         .connect(deployer)
-        .addResolver(resolverImplementation.address, contractSelectors);
+        .addModule(resolverImplementation.address, contractSelectors);
 
     instances.push(resolver);
 
@@ -42,7 +42,7 @@ export async function initialize(
 
         await resolver
             .connect(deployer)
-            .addResolver(contractImplementation.address, contractSelectors);
+            .addModule(contractImplementation.address, contractSelectors);
 
         instances.push(
             await ethers.getContractAt(contractName, resolver.address)

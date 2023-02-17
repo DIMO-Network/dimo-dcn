@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 
 import "hardhat/console.sol";
 
-contract DCNRegistry is
+contract DcnRegistry is
     Initializable,
     ERC721Upgradeable,
     AccessControlUpgradeable,

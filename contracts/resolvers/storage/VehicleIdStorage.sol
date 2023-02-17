@@ -9,7 +9,8 @@ library VehicleIdStorage {
 
     struct Storage {
         address idProxyAddress;
-        mapping(bytes32 => uint256) vehicleIds;
+        mapping(bytes32 => uint256) nodeToVehicleIds;
+        mapping(uint256 => bytes32) vehicleIdToNodes;
     }
 
     /* solhint-disable no-inline-assembly */

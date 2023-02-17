@@ -6,11 +6,12 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 import "./interfaces/IDimo.sol";
-import "./interfaces/IDCNRegistry.sol";
+import "./interfaces/IDcnRegistry.sol";
+import "./interfaces/IPriceManager.sol";
 
 import "hardhat/console.sol";
 
-contract DCNManager is
+contract DcnManager is
     Initializable,
     AccessControlUpgradeable,
     UUPSUpgradeable
@@ -20,8 +21,8 @@ contract DCNManager is
     bytes32 constant TLD_MINTER_ROLE = keccak256("TLD_MINTER_ROLE");
 
     IDimo public dimoToken;
-    IDCNRegistry public dcnRegistry;
-    uint256 public mintingCost;
+    IDcnRegistry public dcnRegistry;
+    IPriceManager public priceManager;
     address public foundation;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -31,8 +32,8 @@ contract DCNManager is
 
     function initialize(
         IDimo _dimoToken,
-        IDCNRegistry _dcnRegistry,
-        uint256 _mintingCost,
+        IDcnRegistry _dcnRegistry,
+        IPriceManager _priceManager,
         address _foundation
     ) external initializer {
         __AccessControl_init();
@@ -42,7 +43,7 @@ contract DCNManager is
 
         dimoToken = _dimoToken;
         dcnRegistry = _dcnRegistry;
-        mintingCost = _mintingCost;
+        priceManager = _priceManager;
         foundation = _foundation;
     }
 
@@ -63,7 +64,13 @@ contract DCNManager is
         uint256 _duration
     ) external {
         dcnRegistry.mint(to, labels, address(0), _duration);
-        dimoToken.transferFrom(msg.sender, foundation, _duration * mintingCost);
+        dimoToken.transferFrom(
+            msg.sender,
+            foundation,
+            priceManager.getPrice(_duration)
+        );
+        // TODO Call resolver
+        // TODO Check is name is not already minted
     }
 
     // TODO Documentation

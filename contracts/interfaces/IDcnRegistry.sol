@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/IAccessControlUpgradeable.sol";
 
-interface IDCNRegistry is IERC721Upgradeable, IAccessControlUpgradeable {
+interface IDcnRegistry is IERC721Upgradeable, IAccessControlUpgradeable {
     function setBaseURI(string calldata baseURI_) external;
 
     function setDefaultResolver(address _resolver) external;

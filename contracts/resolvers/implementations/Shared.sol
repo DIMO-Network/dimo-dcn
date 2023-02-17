@@ -21,6 +21,20 @@ contract Shared is AccessControlInternal {
     /// @dev Only an admin can set the token address
     /// @param _dimoToken The DIMO token address
     function setDimoToken(address _dimoToken) external onlyRole(ADMIN_ROLE) {
-        SharedStorage.getStorage().dimoToken = IDimo(_dimoToken);
+        SharedStorage.getStorage().dimoToken = _dimoToken;
+    }
+
+    /// @notice Sets the DCN Registry address
+    /// @dev Only an admin can set the token address
+    /// @param _dcnRegistry The DCN Registry address
+    function setDcnRegistry(address _dcnRegistry) external onlyRole(ADMIN_ROLE) {
+        SharedStorage.getStorage().dcnRegistry = _dcnRegistry;
+    }
+
+    /// @notice Sets the DCN Manager address
+    /// @dev Only an admin can set the token address
+    /// @param _dcnManager The DCN Manager address
+    function setDcnManager(address _dcnManager) external onlyRole(ADMIN_ROLE) {
+        SharedStorage.getStorage().dcnManager = _dcnManager;
     }
 }

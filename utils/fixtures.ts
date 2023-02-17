@@ -1,7 +1,16 @@
 import { ethers, upgrades } from 'hardhat';
 
 import { C, initialize } from '../utils';
-import { MockDimoToken, DCNManager, DCNRegistry, ResolverRegistry, VehicleIdResolver } from '../typechain-types';
+import {
+    MockDimoToken,
+    MockVehicleId,
+    MockDcnRegistry,
+    MockPriceManager,
+    DcnManager,
+    DcnRegistry,
+    ResolverRegistry,
+    VehicleIdResolver
+} from '../typechain-types';
 
 export async function setupBasic() {
     upgrades.silenceWarnings();
@@ -12,16 +21,20 @@ export async function setupBasic() {
     [resolverInstance, vehicleIdResolverInstance] = await initialize(deployer, 'VehicleIdResolver');
 
     const MockDimoTokenFactory = await ethers.getContractFactory('MockDimoToken');
-    const DCNManagerFactory = await ethers.getContractFactory('DCNManager');
-    const DCNRegistryFactory = await ethers.getContractFactory('DCNRegistry');
+    const MockPriceManager = await ethers.getContractFactory('MockPriceManager');
+    const DcnManagerFactory = await ethers.getContractFactory('DcnManager');
+    const DcnRegistryFactory = await ethers.getContractFactory('DcnRegistry');
     const mockDimoToken = await upgrades.deployProxy(MockDimoTokenFactory, [], { initializer: false, kind: "uups" }) as MockDimoToken;
-    const dcnManager = await upgrades.deployProxy(DCNManagerFactory, [], { initializer: false, kind: "uups" }) as DCNManager;
-    const dcnRegistry = await upgrades.deployProxy(DCNRegistryFactory, [], { initializer: false, kind: "uups" }) as DCNRegistry;
+    const dcnManager = await upgrades.deployProxy(DcnManagerFactory, [], { initializer: false, kind: "uups" }) as DcnManager;
+    const dcnRegistry = await upgrades.deployProxy(DcnRegistryFactory, [], { initializer: false, kind: "uups" }) as DcnRegistry;
+    const mockPriceManager = await upgrades.deployProxy(MockPriceManager, [], { initializer: false, kind: "uups" }) as MockPriceManager;
+
+    await mockPriceManager.setBasePrice(C.MINTING_COST);
 
     await dcnManager.connect(deployer).initialize(
         mockDimoToken.address,
         dcnRegistry.address,
-        C.MINTING_COST,
+        mockPriceManager.address,
         foundation.address
     );
     await dcnRegistry.connect(deployer).initialize(
@@ -51,6 +64,21 @@ export async function setupBasic() {
         resolverInstance,
         vehicleIdResolverInstance
     };
+}
+
+export async function mocks() {
+    const MockDimoTokenFactory = await ethers.getContractFactory('MockDimoToken');
+    const mockDimoToken = await upgrades.deployProxy(MockDimoTokenFactory, [], { initializer: false, kind: "uups" }) as MockDimoToken;
+    const MockVehicleIdFactory = await ethers.getContractFactory('MockVehicleId');
+    const mockVehicleId = await upgrades.deployProxy(MockVehicleIdFactory, [], { initializer: false, kind: "uups" }) as MockVehicleId;
+    const MockDcnRegistryFactory = await ethers.getContractFactory('MockDcnRegistry');
+    const mockDcnRegistry = await upgrades.deployProxy(MockDcnRegistryFactory, [], { initializer: false, kind: "uups" }) as MockDcnRegistry;
+
+    return {
+        mockDimoToken,
+        mockVehicleId,
+        mockDcnRegistry
+    }
 }
 
 export async function setupTldMinted() {

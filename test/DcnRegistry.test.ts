@@ -4,7 +4,7 @@ import { ethers } from 'hardhat';
 
 import { C, namehash, setupBasic, setupTldMinted } from '../utils';
 
-describe('DCNRegistry', function () {
+describe('DcnRegistry', function () {
   describe('initialize', () => {
     context('State', () => {
       it('Should correctly set the name', async () => {

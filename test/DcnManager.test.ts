@@ -1,9 +1,9 @@
-import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
+import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 
 import { C, namehash, setupBasic, setupTldMinted } from '../utils';
 
-describe('DCNManager', function () {
+describe('DcnManager', function () {
   describe('initialize', () => {
     context('State', () => {
       it('Should correctly set the DCN Registry address', async () => {
