@@ -84,7 +84,7 @@ async function deployContracts(
 
   const contractNameArgs = [
     {
-      name: 'DCNRegistry',
+      name: 'DcnRegistry',
       args: [
         C.DCN_REGISTRY_NFT_NAME,
         C.DCN_REGISTRY_NFT_SYMBOL,
@@ -134,7 +134,7 @@ async function deployContracts(
   return instances;
 }
 
-async function addResolver(
+async function addModule(
   deployer: SignerWithAddress
 ): Promise<ContractAddressesByNetwork> {
   const resolverRegistryInstance = await ethers.getContractAt(
@@ -166,7 +166,7 @@ async function addResolver(
     await (
       await resolverRegistryInstance
         .connect(deployer)
-        .addResolver(contract.implementation, contractSelectors)
+        .addModule(contract.implementation, contractSelectors)
     ).wait();
 
     instances[C.networkName].resolvers[contract.name].selectors =
@@ -192,7 +192,7 @@ async function main() {
   const contractInstances = await deployContracts(deployer);
   writeAddresses(contractInstances, C.networkName);
 
-  const instancesWithSelectors = await addResolver(deployer);
+  const instancesWithSelectors = await addModule(deployer);
   writeAddresses(instancesWithSelectors, C.networkName);
 
   // await grantRoles(deployer);
