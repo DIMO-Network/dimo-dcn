@@ -7,7 +7,6 @@ import { ResolverRegistry, VehicleIdResolver, Shared } from '../typechain-types'
 
 describe('VehicleResolver', function () {
     async function setup() {
-        const MOCK_TOKEN_ID = 1;
         const [deployer, admin, nonAdmin, user1, foundation, mockDcnManager, nonDcnManager] = await ethers.getSigners();
 
         const { mockDimoToken, mockVehicleId, mockDcnRegistry } = await loadFixture(mocks);
@@ -25,7 +24,7 @@ describe('VehicleResolver', function () {
         await sharedInstance.connect(admin).setDcnRegistry(mockDcnRegistry.address);
 
         await vehicleIdResolverInstance.connect(admin).setVehicleIdProxyAddress(mockVehicleId.address);
-        await mockVehicleId.connect(user1).mint(MOCK_TOKEN_ID);
+        await mockVehicleId.connect(user1).mint(C.MOCK_VEHICLE_TOKEN_ID);
 
         return {
             deployer,
@@ -37,8 +36,7 @@ describe('VehicleResolver', function () {
             resolverInstance,
             vehicleIdResolverInstance,
             mockVehicleId,
-            mockDcnRegistry,
-            MOCK_TOKEN_ID
+            mockDcnRegistry
         };
     }
 

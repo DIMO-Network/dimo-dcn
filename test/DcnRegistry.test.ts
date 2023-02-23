@@ -2,7 +2,7 @@ import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
-import { C, namehash, setupBasic, setupTldMinted } from '../utils';
+import { C, namehash, setupBasic, setupTldMinted, setupVehicleMinted } from '../utils';
 
 describe('DcnRegistry', function () {
   describe('initialize', () => {
@@ -211,7 +211,7 @@ describe('DcnRegistry', function () {
     //     const tldExpires = ethers.BigNumber.from(C.EXPIRATION_1_YEAR).add(timeStamp);
     //     console.log(mockTldNamehash)
 
-        
+
     //     const tx = await dcnManager
     //         .connect(admin)
     //         .mintTLD(admin.address, C.MOCK_TLD, C.EXPIRATION_1_YEAR);
@@ -239,12 +239,19 @@ describe('DcnRegistry', function () {
         ).to.be.revertedWith('Only DCN Manager');
       });
       it('Should revert if parent node does not exist', async () => {
-        const { user1, dcnManager } = await loadFixture(setupBasic);
+        const { user1, dcnManager, mockDimoToken } = await loadFixture(setupBasic);
+
+        await mockDimoToken
+          .connect(user1)
+          .mint(C.ONE_MILLION);
+        await mockDimoToken
+          .connect(user1)
+          .approve(dcnManager.address, C.ONE_MILLION);
 
         await expect(
           dcnManager
             .connect(user1)
-            .mint(user1.address, C.MOCK_LABELS, C.EXPIRATION_1_YEAR)
+            .mint(user1.address, C.MOCK_LABELS, C.EXPIRATION_1_YEAR, 0)
         ).to.be.revertedWith('Parent node does not exist');
       });
       it('Should revert if label is empty', async () => {
@@ -253,7 +260,7 @@ describe('DcnRegistry', function () {
         await expect(
           dcnManager
             .connect(user1)
-            .mint(user1.address, ['', C.MOCK_TLD], C.EXPIRATION_1_YEAR)
+            .mint(user1.address, ['', C.MOCK_TLD], C.EXPIRATION_1_YEAR, 0)
         ).to.be.revertedWith('Empty label');
       });
       it('Should revert if lables is below 2', async () => {
@@ -262,7 +269,7 @@ describe('DcnRegistry', function () {
         await expect(
           dcnManager
             .connect(user1)
-            .mint(user1.address, [C.MOCK_TLD], C.EXPIRATION_1_YEAR)
+            .mint(user1.address, [C.MOCK_TLD], C.EXPIRATION_1_YEAR, 0)
         ).to.be.revertedWith('Lables length below 2');
       });
     });
@@ -274,7 +281,7 @@ describe('DcnRegistry', function () {
 
         await dcnManager
           .connect(user1)
-          .mint(user1.address, C.MOCK_LABELS, C.EXPIRATION_1_YEAR);
+          .mint(user1.address, C.MOCK_LABELS, C.EXPIRATION_1_YEAR, 0);
 
         expect(await dcnRegistry.ownerOf(tokenId)).to.equal(user1.address);
       });
@@ -283,7 +290,7 @@ describe('DcnRegistry', function () {
 
         await dcnManager
           .connect(user1)
-          .mint(user1.address, C.MOCK_LABELS, C.EXPIRATION_1_YEAR);
+          .mint(user1.address, C.MOCK_LABELS, C.EXPIRATION_1_YEAR, 0);
 
         expect(await dcnRegistry.resolver(mockNamehash)).to.equal(resolverInstance.address);
       });
@@ -294,7 +301,7 @@ describe('DcnRegistry', function () {
 
         await dcnManager
           .connect(user1)
-          .mint(user1.address,C.MOCK_LABELS, C.EXPIRATION_1_YEAR);
+          .mint(user1.address, C.MOCK_LABELS, C.EXPIRATION_1_YEAR, 0);
 
         expect(await dcnRegistry.expires(mockNamehash)).to.equal(tldExpires);
       });
@@ -309,10 +316,92 @@ describe('DcnRegistry', function () {
         await expect(
           dcnManager
             .connect(user1)
-            .mint(user1.address, C.MOCK_LABELS, C.EXPIRATION_1_YEAR)
+            .mint(user1.address, C.MOCK_LABELS, C.EXPIRATION_1_YEAR, 0)
         )
           .to.emit(dcnRegistry, 'NewExpiration')
           .withArgs(mockNamehash, tldExpires);
+      });
+    });
+  });
+
+  describe('claim', () => {
+    const mockNamehash = namehash(C.MOCK_LABELS);
+
+    context('Error handling', () => {
+      it.skip('Should revert if caller is not the DCN Manager', async () => {
+        const { user1, dcnRegistry } = await loadFixture(setupVehicleMinted);
+        console.log('here1')
+
+        await expect(
+          dcnRegistry
+            .connect(user1)
+            .claim(user1.address, mockNamehash, C.EXPIRATION_1_YEAR, 0)
+        ).to.be.revertedWith('Only DCN Manager');
+      });
+      it('Should revert if node does not exist', async () => {
+        const { user1, dcnManager } = await loadFixture(setupVehicleMinted);
+
+        await expect(
+          dcnManager
+            .connect(user1)
+            .claim(user1.address, mockNamehash, C.EXPIRATION_1_YEAR, 0)
+        ).to.be.revertedWith('ERC721: invalid token ID');
+      });
+      it('Should revert if node does not exist', async () => {
+        const { user1,  dcnManager } = await loadFixture(setupVehicleMinted);
+
+        await expect(
+          dcnManager
+            .connect(user1)
+            .claim(user1.address, mockNamehash, C.EXPIRATION_1_YEAR, 0)
+        ).to.be.revertedWith('ERC721: invalid token ID');
+      });
+      it('Should revert if node is not yet expired', async () => {
+        const { user1, user2, dcnManager, mockDimoToken } = await loadFixture(setupVehicleMinted);
+
+        await dcnManager
+          .connect(user1)
+          .mint(user1.address, C.MOCK_LABELS, C.EXPIRATION_1_YEAR, 0);
+
+        await mockDimoToken
+          .connect(user2)
+          .mint(C.ONE_MILLION);
+        await mockDimoToken
+          .connect(user2)
+          .approve(dcnManager.address, C.ONE_MILLION);
+
+        await expect(
+          dcnManager
+            .connect(user2)
+            .claim(user2.address, mockNamehash, C.EXPIRATION_1_YEAR, 0)
+        ).to.be.revertedWith('Not available');
+      });
+    });
+
+    context('State change', () => {
+      it('Should remint node to the new user', async () => {
+        const { user1, user2, dcnManager, dcnRegistry, mockDimoToken } = await loadFixture(setupVehicleMinted);
+
+        await dcnManager
+          .connect(user1)
+          .mint(user1.address, C.MOCK_LABELS, C.EXPIRATION_1_YEAR, 0);
+        
+        await time.increase(parseInt(C.EXPIRATION_1_YEAR) + 1);
+
+        expect(await dcnRegistry.ownerOf(mockNamehash)).to.equal(user1.address);
+
+        await mockDimoToken
+          .connect(user2)
+          .mint(C.ONE_MILLION);
+        await mockDimoToken
+          .connect(user2)
+          .approve(dcnManager.address, C.ONE_MILLION);
+
+        await dcnManager
+          .connect(user2)
+          .claim(user2.address, mockNamehash, C.EXPIRATION_1_YEAR, 0);
+        
+        expect(await dcnRegistry.ownerOf(mockNamehash)).to.equal(user2.address);
       });
     });
   });

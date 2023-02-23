@@ -13,6 +13,14 @@ contract VehicleIdResolver is AccessControlInternal {
     event VehicleIdProxySet(address indexed proxy);
     event VehicleIdChanged(bytes32 indexed node, uint256 indexed _vehicleId);
 
+    modifier onlyDcnManager() {
+        require(
+            msg.sender == SharedStorage.getStorage().dcnManager,
+            "Only DCN Manager"
+        );
+        _;
+    }
+
     /// @notice Sets the Vehicle Id proxy address
     /// @dev Only an admin can set the address
     /// @param addr The address of the proxy
@@ -29,11 +37,13 @@ contract VehicleIdResolver is AccessControlInternal {
     /// May only be called by the owner of that node in the DCN registry
     /// @param node The node to update
     /// @param _vehicleId The vehicle ID to be set
-    function setVehicleId(bytes32 node, uint256 _vehicleId) external {
+    function setVehicleId(
+        bytes32 node,
+        uint256 _vehicleId
+    ) external onlyDcnManager {
         SharedStorage.Storage storage s = SharedStorage.getStorage();
         VehicleIdStorage.Storage storage vs = VehicleIdStorage.getStorage();
 
-        require(s.dcnManager == msg.sender, "Only DCN Manager");
         require(
             IDcnRegistry(s.dcnRegistry).ownerOf(uint256(node)) ==
                 INFT(vs.idProxyAddress).ownerOf(_vehicleId),
@@ -49,6 +59,16 @@ contract VehicleIdResolver is AccessControlInternal {
         vs.vehicleIdToNodes[_vehicleId] = node;
 
         emit VehicleIdChanged(node, _vehicleId);
+    }
+
+    function resetVehicleId(
+        bytes32 node,
+        uint256 _vehicleId
+    ) external onlyDcnManager {
+        VehicleIdStorage.Storage storage vs = VehicleIdStorage.getStorage();
+
+        vs.nodeToVehicleIds[node] = 0;
+        vs.vehicleIdToNodes[_vehicleId] = 0x00;
     }
 
     /// @notice Returns the vehicle ID associated with a DCN node

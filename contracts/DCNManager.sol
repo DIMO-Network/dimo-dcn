@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "./interfaces/IDimo.sol";
 import "./interfaces/IDcnRegistry.sol";
 import "./interfaces/IPriceManager.sol";
+import "./interfaces/IResolver.sol";
 
 import "hardhat/console.sol";
 
@@ -23,6 +24,7 @@ contract DcnManager is
     IDimo public dimoToken;
     IDcnRegistry public dcnRegistry;
     IPriceManager public priceManager;
+    IResolver public resolver;
     address public foundation;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -34,6 +36,7 @@ contract DcnManager is
         IDimo _dimoToken,
         IDcnRegistry _dcnRegistry,
         IPriceManager _priceManager,
+        IResolver _resolver,
         address _foundation
     ) external initializer {
         __AccessControl_init();
@@ -44,6 +47,7 @@ contract DcnManager is
         dimoToken = _dimoToken;
         dcnRegistry = _dcnRegistry;
         priceManager = _priceManager;
+        resolver = _resolver;
         foundation = _foundation;
     }
 
@@ -58,19 +62,23 @@ contract DcnManager is
     }
 
     // TODO Documentation
+    // _duration is in seconds, $25 per year -> $25/(60*60*24*365)
     function mint(
         address to,
         string[] calldata labels,
-        uint256 _duration
+        uint256 duration,
+        uint256 vehicleId
     ) external {
-        dcnRegistry.mint(to, labels, address(0), _duration);
         dimoToken.transferFrom(
             msg.sender,
             foundation,
-            priceManager.getPrice(_duration)
+            priceManager.getPrice(duration)
         );
+        bytes32 node = dcnRegistry.mint(to, labels, address(0), duration);
         // TODO Call resolver
-        // TODO Check is name is not already minted
+        if (vehicleId != 0) {
+            resolver.setVehicleId(node, vehicleId);
+        }
     }
 
     // TODO Documentation
@@ -90,7 +98,26 @@ contract DcnManager is
     }
 
     /// TODO
-    // function claim
+    function claim(
+        address to,
+        bytes32 node,
+        uint256 duration,
+        uint256 vehicleId
+    ) external {
+        dimoToken.transferFrom(
+            msg.sender,
+            foundation,
+            priceManager.getPrice(duration)
+        );
+        dcnRegistry.claim(to, node, address(0), duration);
+        // TODO pay
+        // TODO call resolver
+        if (vehicleId != 0) {
+            resolver.setVehicleId(node, vehicleId);
+        } else {
+            resolver.resetVehicleId(node, vehicleId);
+        }
+    }
 
     function _authorizeUpgrade(
         address newImplementation
