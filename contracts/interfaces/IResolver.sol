@@ -35,5 +35,5 @@ interface IResolver {
 
     function nodeByVehicleId(
         uint256 _vehicleId
-    ) external view returns (bytes32 _node);
+    ) external view returns (bytes32 node);
 }

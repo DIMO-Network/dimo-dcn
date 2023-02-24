@@ -27,7 +27,7 @@ describe('DcnManager', function () {
         await expect(
           dcnManager
             .connect(nonAdmin)
-            .mintTLD(user1.address, C.MOCK_TLD, C.EXPIRATION_1_YEAR)
+            .mintTLD(user1.address, C.MOCK_TLD, C.ONE_YEAR)
         ).to.be.revertedWith(
             `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.TLD_MINTER_ROLE
             }`
@@ -68,7 +68,7 @@ describe('DcnManager', function () {
         await expect(
           dcnManager
             .connect(nonAdmin)
-            .setExpiration(mockTldNamehash, C.EXPIRATION_2_YEAR)
+            .setExpiration(mockTldNamehash, C.TWO_YEARS)
         ).to.be.revertedWith(
           `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.ADMIN_ROLE
           }`

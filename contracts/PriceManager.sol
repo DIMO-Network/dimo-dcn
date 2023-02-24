@@ -5,7 +5,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
-/// TODO Documentation
+/// @title PriceManager
+/// @notice Contract to manage how DCN minting price is calculated
 contract PriceManager is
     Initializable,
     AccessControlUpgradeable,
@@ -32,12 +33,18 @@ contract PriceManager is
         basePrice = _basePrice;
     }
 
+    /// @notice Sets the base price
+    /// @dev Only an admin can call this function
+    /// @param newBasePrice The new base price
     function setBasePrice(uint256 newBasePrice) external onlyRole(ADMIN_ROLE) {
         basePrice = newBasePrice;
 
         emit BasePriceChanged(newBasePrice);
     }
 
+    /// @notice Gets the minting price given the wanted duration
+    /// @param duration Duration wanted
+    /// @return price Minting price
     function getPrice(uint256 duration) external view returns (uint256 price) {
         price = basePrice * duration;
     }

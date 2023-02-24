@@ -9,6 +9,8 @@ import {ADMIN_ROLE} from "../shared/Roles.sol";
 
 import "@solidstate/contracts/access/access_control/AccessControlInternal.sol";
 
+/// @title VehicleIdResolver
+/// @notice Resolver to map DCN nodes to vehicle IDs
 contract VehicleIdResolver is AccessControlInternal {
     event VehicleIdProxySet(address indexed proxy);
     event VehicleIdChanged(bytes32 indexed node, uint256 indexed _vehicleId);
@@ -61,6 +63,9 @@ contract VehicleIdResolver is AccessControlInternal {
         emit VehicleIdChanged(node, _vehicleId);
     }
 
+    /// @notice Resets the pair node-vehicleId to default values
+    /// @param node The node to be reset
+    /// @param _vehicleId The vehicle ID to be reset
     function resetVehicleId(
         bytes32 node,
         uint256 _vehicleId
@@ -82,10 +87,10 @@ contract VehicleIdResolver is AccessControlInternal {
 
     /// @notice Returns the DCN node associated with a vehicle ID
     /// @param _vehicleId The vehicle ID to query
-    /// @return _node The associated DCN node
+    /// @return node The associated DCN node
     function nodeByVehicleId(
         uint256 _vehicleId
-    ) external view returns (bytes32 _node) {
-        _node = VehicleIdStorage.getStorage().vehicleIdToNodes[_vehicleId];
+    ) external view returns (bytes32 node) {
+        node = VehicleIdStorage.getStorage().vehicleIdToNodes[_vehicleId];
     }
 }

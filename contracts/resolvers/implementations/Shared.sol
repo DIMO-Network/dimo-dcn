@@ -7,6 +7,8 @@ import {ADMIN_ROLE} from "../shared/Roles.sol";
 
 import "@solidstate/contracts/access/access_control/AccessControlInternal.sol";
 
+/// @title Shared
+/// @notice Contract that contains recurrent information to be used among other contracts
 contract Shared is AccessControlInternal {
     /// @notice Sets the foundation address
     /// @dev Only an admin can set the address

@@ -6,8 +6,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
-import "hardhat/console.sol";
-
+/// @title DcnRegistry
+/// @notice Contract that contains all date regarding names and basic functions to manage them
 contract DcnRegistry is
     Initializable,
     ERC721Upgradeable,
@@ -30,7 +30,6 @@ contract DcnRegistry is
         uint256 expires;
     }
 
-    uint256 public gracePeriod;
     string public baseURI;
     address public defaultResolver;
     address public dcnManager;
@@ -64,14 +63,12 @@ contract DcnRegistry is
     /// @param baseURI_ Base URI
     /// @param _defaultResolver Default resolver
     /// @param _dcnManager DCN Manager address
-    /// @param _gracePeriod Grace period for claiming a name
     function initialize(
         string calldata _name,
         string calldata _symbol,
         string calldata baseURI_,
         address _defaultResolver,
-        address _dcnManager,
-        uint256 _gracePeriod
+        address _dcnManager
     ) external initializer {
         __ERC721_init_unchained(_name, _symbol);
         __AccessControl_init_unchained();
@@ -82,7 +79,6 @@ contract DcnRegistry is
         _setBaseURI(baseURI_);
         _setDefaultResolver(_defaultResolver);
         dcnManager = _dcnManager;
-        gracePeriod = _gracePeriod;
 
         // Initial mint to ensure data consistency when _validateNamehash
         _mint(msg.sender, uint256(0x00));
@@ -140,7 +136,32 @@ contract DcnRegistry is
         _mintWithRecords(to, node, _resolver, duration);
     }
 
-    /// TODO Documentation
+    /// @notice Renews the expiration of a node
+    /// @dev Caller must be the DCN Manager
+    /// @param node The node to be renewed
+    /// @param duration The duration to extend the expiration
+    function renew(bytes32 node, uint256 duration) external onlyDcnManager {
+        uint256 currentExpiration = records[node].expires;
+        uint256 newExpiration;
+
+        if (currentExpiration > block.timestamp) {
+            // The node has not expired, it extends from the current expiration date
+            newExpiration = currentExpiration + duration;
+        } else {
+            // The node has expired, it extends from the current timestamp
+            newExpiration = block.timestamp + duration;
+        }
+
+        _setExpiration(node, newExpiration);
+    }
+
+    /// @notice Claims the ownership of a token if it is expired
+    /// @dev Caller must be the DCN Manager
+    /// @dev The claimer is able to reset the resolver and duration
+    /// @param to The new token owner
+    /// @param node The node to be claimed
+    /// @param _resolver The address of the resolver to be set
+    /// @param duration Period before name expires
     function claim(
         address to,
         bytes32 node,
@@ -149,24 +170,12 @@ contract DcnRegistry is
     ) external onlyDcnManager {
         // Checks internally if the token is minted, so we save a check
         _burn(uint256(node));
-        require(
-            records[node].expires + gracePeriod < block.timestamp,
-            "Not available"
-        );
+        require(records[node].expires < block.timestamp, "Not available");
         _mintWithRecords(to, node, _resolver, duration);
     }
 
-    /// TODO Documentation
-    function renew(
-        address to,
-        bytes32 node,
-        uint256 duration
-    ) external onlyDcnManager {
-        _validateRenewal(node, duration);
-    }
-
     /// @notice Sets the resolver address for the specified node
-    /// @dev Caller must be approved or node owner
+    /// @dev Caller must be the DCN Manager and node must exist
     /// @param node The node to update
     /// @param _resolver The address of the resolver to be set
     function setResolver(
@@ -177,14 +186,14 @@ contract DcnRegistry is
     }
 
     /// @notice Sets the expiration for the specified node
-    /// @dev Caller must be approved or node owner
+    /// @dev Caller must be the DCN Manager and node must exist
     /// @param node The node to update
     /// @param duration Period before name expires
     function setExpiration(
         bytes32 node,
         uint256 duration
     ) external onlyDcnManager exists(node) {
-        _validateNewExpiration(node, duration);
+        _setExpiration(node, block.timestamp + duration);
     }
 
     /// ----- EXTERNAL VIEW FUNCTIONS ----- ///
@@ -273,24 +282,24 @@ contract DcnRegistry is
 
     /// @dev Private function to register a new name and mints its corresponding token
     /// @param to Token owner
-    /// @param _node Namehash to be recorded
+    /// @param node Namehash to be recorded
     /// @param _resolver The address of the resolver to be set
     /// @param duration Period before name expires
     /// @return _tokenId Token Id generated from namehash
     function _mintWithRecords(
         address to,
-        bytes32 _node,
+        bytes32 node,
         address _resolver,
         uint256 duration
     ) private returns (uint256 _tokenId) {
-        _tokenId = uint256(_node);
+        _tokenId = uint256(node);
 
         _mint(to, _tokenId);
 
-        emit NewNode(_node, to);
+        emit NewNode(node, to);
 
-        _setResolver(_node, _resolver);
-        _validateNewExpiration(_node, duration);
+        _setResolver(node, _resolver);
+        _setExpiration(node, block.timestamp + duration);
     }
 
     /// @dev Private function to set the resolver address for the specified node
@@ -307,34 +316,6 @@ contract DcnRegistry is
     function _setExpiration(bytes32 node, uint256 _expiration) private {
         records[node].expires = _expiration;
         emit NewExpiration(node, _expiration);
-    }
-
-    function _validateNewExpiration(bytes32 node, uint256 duration) private {
-        require(
-            block.timestamp + duration + gracePeriod >
-                block.timestamp + gracePeriod,
-            "Overflow"
-        );
-
-        _setExpiration(node, block.timestamp + duration);
-    }
-
-    function _validateRenewal(
-        bytes32 node,
-        uint256 duration
-    ) private {
-        uint256 currentExpiration = records[node].expires;
-        require(
-            currentExpiration + gracePeriod >= block.timestamp,
-            "Invalid period"
-        );
-        // Prevent future overflow
-        require(
-            currentExpiration + duration + gracePeriod > duration + gracePeriod,
-            "Overflow"
-        );
-
-        _setExpiration(node, currentExpiration + duration);
     }
 
     /// @dev Calculates the name hash of a label given the parent node

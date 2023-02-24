@@ -10,8 +10,8 @@ import "./interfaces/IDcnRegistry.sol";
 import "./interfaces/IPriceManager.sol";
 import "./interfaces/IResolver.sol";
 
-import "hardhat/console.sol";
-
+/// @title DcnManager
+/// @notice Contract to manage DCN minting, price and vehicle ID resolution
 contract DcnManager is
     Initializable,
     AccessControlUpgradeable,
@@ -51,18 +51,25 @@ contract DcnManager is
         foundation = _foundation;
     }
 
-    // TODO Documentation
     /// @notice Mints a top level domain (e.g. .dimo)
+    /// @dev Only a TLD minter can mint
+    /// @param to The token owner
+    /// @param label Label to become a TLD
+    /// @param duration Period before name expires
     function mintTLD(
         address to,
         string calldata label,
-        uint256 _duration
+        uint256 duration
     ) external onlyRole(TLD_MINTER_ROLE) {
-        dcnRegistry.mintTLD(to, label, address(0), _duration);
+        dcnRegistry.mintTLD(to, label, address(0), duration);
     }
 
-    // TODO Documentation
-    // _duration is in seconds, $25 per year -> $25/(60*60*24*365)
+    /// @notice Mints a DNC node and maps vehicle ID if set
+    /// @notice The price of the minting is based on the duration
+    /// @param to Token owner
+    /// @param labels List of labels (e.g ['label1', 'tld'] -> label1.tld)
+    /// @param duration Period before name expires (in seconds)
+    /// @param vehicleId The vehicle ID to be associated to the DCN node
     function mint(
         address to,
         string[] calldata labels,
@@ -74,14 +81,18 @@ contract DcnManager is
             foundation,
             priceManager.getPrice(duration)
         );
+
         bytes32 node = dcnRegistry.mint(to, labels, address(0), duration);
-        // TODO Call resolver
+
         if (vehicleId != 0) {
             resolver.setVehicleId(node, vehicleId);
         }
     }
 
-    // TODO Documentation
+    /// @notice Sets the resolver address for the specified node
+    /// @dev Caller must have the admin role
+    /// @param node The node to update
+    /// @param _resolver The address of the resolver to be set
     function setResolver(
         bytes32 node,
         address _resolver
@@ -89,15 +100,42 @@ contract DcnManager is
         dcnRegistry.setResolver(node, _resolver);
     }
 
-    // TODO Documentation
+    /// @notice Sets the expiration for the specified node
+    /// @dev Caller must have the admin role
+    /// @param node The node to update
+    /// @param duration Period before name expires
     function setExpiration(
         bytes32 node,
-        uint256 _duration
+        uint256 duration
     ) external onlyRole(ADMIN_ROLE) {
-        dcnRegistry.setExpiration(node, _duration);
+        dcnRegistry.setExpiration(node, duration);
     }
 
-    /// TODO
+    /// @notice Renews the expiration of a node
+    /// @notice Caller pays for the extension
+    /// @dev The node owner must be match `to`
+    /// @param to The node owner
+    /// @param node The node to be renewed
+    /// @param duration The duration to extend the expiration
+    function renew(address to, bytes32 node, uint256 duration) external {
+        require(dcnRegistry.ownerOf(uint256(node)) == to, "Not node owner");
+
+        dimoToken.transferFrom(
+            msg.sender,
+            foundation,
+            priceManager.getPrice(duration)
+        );
+
+        dcnRegistry.renew(node, duration);
+    }
+
+    /// @notice Claims the ownership of a node if it is expired
+    /// @notice Caller also pays for the duration
+    /// @notice Caller may also set map the vehicle ID
+    /// @dev The claimer is able to reset the duration
+    /// @param to The new node owner
+    /// @param node The node to be claimed
+    /// @param duration Period before name expires
     function claim(
         address to,
         bytes32 node,
@@ -109,9 +147,9 @@ contract DcnManager is
             foundation,
             priceManager.getPrice(duration)
         );
+
         dcnRegistry.claim(to, node, address(0), duration);
-        // TODO pay
-        // TODO call resolver
+
         if (vehicleId != 0) {
             resolver.setVehicleId(node, vehicleId);
         } else {

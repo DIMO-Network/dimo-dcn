@@ -13,32 +13,34 @@ interface IDcnRegistry is IERC721Upgradeable, IAccessControlUpgradeable {
         address to,
         string calldata label,
         address _resolver,
-        uint256 _duration
+        uint256 duration
     ) external;
 
     function mint(
         address to,
         string[] calldata labels,
         address _resolver,
-        uint256 _duration
+        uint256 duration
     ) external returns (bytes32 node);
 
     function claim(
         address to,
         bytes32 node,
         address _resolver,
-        uint256 _duration
+        uint256 duration
     ) external;
+
+    function renew(bytes32 node, uint256 duration) external;
 
     function setRecord(
         bytes32 node,
         address _resolver,
-        uint256 _duration
+        uint256 duration
     ) external;
 
     function setResolver(bytes32 node, address _resolver) external;
 
-    function setExpiration(bytes32 node, uint256 _duration) external;
+    function setExpiration(bytes32 node, uint256 duration) external;
 
     function resolver(bytes32 node) external view returns (address);
 
