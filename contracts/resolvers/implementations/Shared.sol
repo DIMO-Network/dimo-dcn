@@ -12,31 +12,31 @@ import "@solidstate/contracts/access/access_control/AccessControlInternal.sol";
 contract Shared is AccessControlInternal {
     /// @notice Sets the foundation address
     /// @dev Only an admin can set the address
-    /// @param _foundation The foundation address
+    /// @param foundation The foundation address
     function setFoundationAddress(
-        address _foundation
+        address foundation
     ) external onlyRole(ADMIN_ROLE) {
-        SharedStorage.getStorage().foundation = _foundation;
+        SharedStorage.getStorage().foundation = foundation;
     }
 
     /// @notice Sets the DIMO token address
     /// @dev Only an admin can set the token address
-    /// @param _dimoToken The DIMO token address
-    function setDimoToken(address _dimoToken) external onlyRole(ADMIN_ROLE) {
-        SharedStorage.getStorage().dimoToken = _dimoToken;
+    /// @param dimoToken The DIMO token address
+    function setDimoToken(address dimoToken) external onlyRole(ADMIN_ROLE) {
+        SharedStorage.getStorage().dimoToken = dimoToken;
     }
 
     /// @notice Sets the DCN Registry address
     /// @dev Only an admin can set the token address
-    /// @param _dcnRegistry The DCN Registry address
-    function setDcnRegistry(address _dcnRegistry) external onlyRole(ADMIN_ROLE) {
-        SharedStorage.getStorage().dcnRegistry = _dcnRegistry;
+    /// @param dcnRegistry The DCN Registry address
+    function setDcnRegistry(address dcnRegistry) external onlyRole(ADMIN_ROLE) {
+        SharedStorage.getStorage().dcnRegistry = dcnRegistry;
     }
 
     /// @notice Sets the DCN Manager address
     /// @dev Only an admin can set the token address
-    /// @param _dcnManager The DCN Manager address
-    function setDcnManager(address _dcnManager) external onlyRole(ADMIN_ROLE) {
-        SharedStorage.getStorage().dcnManager = _dcnManager;
+    /// @param dcnManager The DCN Manager address
+    function setDcnManager(address dcnManager) external onlyRole(ADMIN_ROLE) {
+        SharedStorage.getStorage().dcnManager = dcnManager;
     }
 }

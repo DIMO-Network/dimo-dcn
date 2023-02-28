@@ -33,39 +33,40 @@ contract DcnManager is
     }
 
     function initialize(
-        IDimo _dimoToken,
-        IDcnRegistry _dcnRegistry,
-        IPriceManager _priceManager,
-        IResolver _resolver,
-        address _foundation
+        IDimo dimoToken_,
+        IDcnRegistry dcnRegistry_,
+        IPriceManager priceManager_,
+        IResolver resolver_,
+        address foundation_
     ) external initializer {
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
-        dimoToken = _dimoToken;
-        dcnRegistry = _dcnRegistry;
-        priceManager = _priceManager;
-        resolver = _resolver;
-        foundation = _foundation;
+        dimoToken = dimoToken_;
+        dcnRegistry = dcnRegistry_;
+        priceManager = priceManager_;
+        resolver = resolver_;
+        foundation = foundation_;
     }
 
     /// @notice Mints a top level domain (e.g. .dimo)
     /// @dev Only a TLD minter can mint
     /// @param to The token owner
     /// @param label Label to become a TLD
-    /// @param duration Period before name expires
-    function mintTLD(
+    /// @param duration Period before name expires (in seconds)
+    function mintTld(
         address to,
         string calldata label,
         uint256 duration
     ) external onlyRole(TLD_MINTER_ROLE) {
-        dcnRegistry.mintTLD(to, label, address(0), duration);
+        dcnRegistry.mintTld(to, label, address(0), duration);
     }
 
     /// @notice Mints a DNC node and maps vehicle ID if set
     /// @notice The price of the minting is based on the duration
+    /// @dev To mint ['a', 'b'], ['b'] has to exist
     /// @param to Token owner
     /// @param labels List of labels (e.g ['label1', 'tld'] -> label1.tld)
     /// @param duration Period before name expires (in seconds)
@@ -76,6 +77,8 @@ contract DcnManager is
         uint256 duration,
         uint256 vehicleId
     ) external {
+        require(labels.length == 2, "Only 2 labels");
+
         dimoToken.transferFrom(
             msg.sender,
             foundation,
@@ -92,18 +95,18 @@ contract DcnManager is
     /// @notice Sets the resolver address for the specified node
     /// @dev Caller must have the admin role
     /// @param node The node to update
-    /// @param _resolver The address of the resolver to be set
+    /// @param resolver_ The address of the resolver to be set
     function setResolver(
         bytes32 node,
-        address _resolver
+        address resolver_
     ) external onlyRole(ADMIN_ROLE) {
-        dcnRegistry.setResolver(node, _resolver);
+        dcnRegistry.setResolver(node, resolver_);
     }
 
     /// @notice Sets the expiration for the specified node
     /// @dev Caller must have the admin role
     /// @param node The node to update
-    /// @param duration Period before name expires
+    /// @param duration Period before name expires (in seconds)
     function setExpiration(
         bytes32 node,
         uint256 duration
@@ -116,7 +119,7 @@ contract DcnManager is
     /// @dev The node owner must be match `to`
     /// @param to The node owner
     /// @param node The node to be renewed
-    /// @param duration The duration to extend the expiration
+    /// @param duration The duration to extend the expiration (in seconds)
     function renew(address to, bytes32 node, uint256 duration) external {
         require(dcnRegistry.ownerOf(uint256(node)) == to, "Not node owner");
 
@@ -135,7 +138,7 @@ contract DcnManager is
     /// @dev The claimer is able to reset the duration
     /// @param to The new node owner
     /// @param node The node to be claimed
-    /// @param duration Period before name expires
+    /// @param duration Period before name expires (in seconds)
     function claim(
         address to,
         bytes32 node,

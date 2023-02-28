@@ -19,7 +19,7 @@ describe('DcnManager', function () {
     });
   });
 
-  describe('mintTLD', () => {
+  describe('mintTld', () => {
     context('Error handling', () => {
       it('Should revert if caller does not have the TLD_MINTER_ROLE', async () => {
         const { nonAdmin, user1, dcnManager } = await loadFixture(setupBasic);
@@ -27,16 +27,27 @@ describe('DcnManager', function () {
         await expect(
           dcnManager
             .connect(nonAdmin)
-            .mintTLD(user1.address, C.MOCK_TLD, C.ONE_YEAR)
+            .mintTld(user1.address, C.MOCK_TLD, C.ONE_YEAR)
         ).to.be.revertedWith(
-            `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.TLD_MINTER_ROLE
-            }`
-          );
+          `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.TLD_MINTER_ROLE
+          }`
+        );
       });
     });
   });
 
   describe('mint', () => {
+    context('Error handling', () => {
+      it('Should revert if labels length is not 2', async () => {
+        const { user1, dcnManager } = await loadFixture(setupTldMinted);
+
+        await expect(
+          dcnManager
+            .connect(user1)
+            .mint(user1.address, C.MOCK_LABELS_3, C.ONE_YEAR, 0)
+        ).to.be.revertedWith('Only 2 labels');
+      });
+    });
   });
 
   describe('setResolver', () => {

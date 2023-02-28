@@ -27,13 +27,13 @@ interface IResolver {
 
     function setVehicleIdProxyAddress(address addr) external;
 
-    function setVehicleId(bytes32 node, uint256 _vehicleId) external;
+    function setVehicleId(bytes32 node, uint256 vehicleId_) external;
 
-    function resetVehicleId(bytes32 node, uint256 _vehicleId) external;
+    function resetVehicleId(bytes32 node, uint256 vehicleId_) external;
 
-    function vehicleId(bytes32 node) external view returns (uint256 _vehicleId);
+    function vehicleId(bytes32 node) external view returns (uint256 vehicleId_);
 
     function nodeByVehicleId(
-        uint256 _vehicleId
+        uint256 vehicleId_
     ) external view returns (bytes32 node);
 }

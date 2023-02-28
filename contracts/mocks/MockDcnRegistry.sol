@@ -22,33 +22,33 @@ contract MockDcnRegistry is ERC721Upgradeable, UUPSUpgradeable {
     function mint(
         address to,
         string[] calldata labels,
-        address _resolver,
+        address resolver_,
         uint256 duration
     ) external {
         bytes32 node = _namehash(labels);
-        _mintWithRecords(to, node, _resolver, duration);
+        _mintWithRecords(to, node, resolver_, duration);
     }
 
     function _mintWithRecords(
         address to,
         bytes32 node,
-        address _resolver,
+        address resolver_,
         uint256 duration
-    ) private returns (uint256 _tokenId) {
-        _tokenId = uint256(node);
+    ) private returns (uint256 tokenId_) {
+        tokenId_ = uint256(node);
 
-        _mint(to, _tokenId);
+        _mint(to, tokenId_);
 
-        _setResolver(node, _resolver);
+        _setResolver(node, resolver_);
         _setExpiration(node, block.timestamp + duration);
     }
 
-    function _setResolver(bytes32 node, address _resolver) private {
-        records[node].resolver = _resolver;
+    function _setResolver(bytes32 node, address resolver_) private {
+        records[node].resolver = resolver_;
     }
 
-    function _setExpiration(bytes32 node, uint256 _expiration) private {
-        records[node].expires = _expiration;
+    function _setExpiration(bytes32 node, uint256 expiration_) private {
+        records[node].expires = expiration_;
     }
 
     function _namehash(

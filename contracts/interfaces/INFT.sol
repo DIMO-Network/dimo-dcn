@@ -12,7 +12,7 @@ interface INFT {
         uint256 tokenId
     ) external;
 
-    function setApprovalForAll(address operator, bool _approved) external;
+    function setApprovalForAll(address operator, bool approved_) external;
 
     function safeTransferFrom(
         address from,

@@ -2,7 +2,7 @@ import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
-import { C, namehash, setupBasic, setupTldMinted, setupVehicleMinted } from '../utils';
+import { C, namehash, setupBasic, setupTldMinted, setupVehicleMinted, setupBasicRegistryMock } from '../utils';
 
 describe('DcnRegistry', function () {
   describe('initialize', () => {
@@ -149,7 +149,7 @@ describe('DcnRegistry', function () {
     });
   });
 
-  describe('mintTLD', () => {
+  describe('mintTld', () => {
     context('Error handling', () => {
       it('Should revert if caller is not the DCN Manager', async () => {
         const { nonAdmin, user1, dcnRegistry } = await loadFixture(setupBasic);
@@ -157,7 +157,7 @@ describe('DcnRegistry', function () {
         await expect(
           dcnRegistry
             .connect(nonAdmin)
-            .mintTLD(user1.address, C.MOCK_TLD, C.ZERO_ADDRESS, C.ONE_YEAR)
+            .mintTld(user1.address, C.MOCK_TLD, C.ZERO_ADDRESS, C.ONE_YEAR)
         ).to.be.revertedWith('Only DCN Manager');
       });
       it('Should revert if label is empty', async () => {
@@ -166,7 +166,7 @@ describe('DcnRegistry', function () {
         await expect(
           dcnManager
             .connect(admin)
-            .mintTLD(admin.address, '', C.ONE_YEAR)
+            .mintTld(admin.address, '', C.ONE_YEAR)
         ).to.be.revertedWith('Empty label');
       });
     });
@@ -180,7 +180,7 @@ describe('DcnRegistry', function () {
 
         await dcnManager
           .connect(admin)
-          .mintTLD(admin.address, C.MOCK_TLD, C.ONE_YEAR);
+          .mintTld(admin.address, C.MOCK_TLD, C.ONE_YEAR);
 
         expect(await dcnRegistry.ownerOf(tokenId)).to.equal(admin.address);
       });
@@ -189,7 +189,7 @@ describe('DcnRegistry', function () {
 
         await dcnManager
           .connect(admin)
-          .mintTLD(admin.address, C.MOCK_TLD, C.ONE_YEAR);
+          .mintTld(admin.address, C.MOCK_TLD, C.ONE_YEAR);
 
         expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
       });
@@ -200,7 +200,7 @@ describe('DcnRegistry', function () {
 
         await dcnManager
           .connect(admin)
-          .mintTLD(admin.address, C.MOCK_TLD, C.ONE_YEAR);
+          .mintTld(admin.address, C.MOCK_TLD, C.ONE_YEAR);
 
         expect(await dcnRegistry.expires(mockTldNamehash)).to.gte(tldExpires);
       });
@@ -217,7 +217,7 @@ describe('DcnRegistry', function () {
 
     //     const tx = await dcnManager
     //         .connect(admin)
-    //         .mintTLD(admin.address, C.MOCK_TLD, C.ONE_YEAR);
+    //         .mintTld(admin.address, C.MOCK_TLD, C.ONE_YEAR);
     //         const receipt = await tx.wait();
     //         // .to.emit(dcnRegistry, 'NewExpiration')
     //         // .withArgs(mockTldNamehash, tldExpires);
@@ -266,14 +266,14 @@ describe('DcnRegistry', function () {
             .mint(user1.address, ['', C.MOCK_TLD], C.ONE_YEAR, 0)
         ).to.be.revertedWith('Empty label');
       });
-      it('Should revert if lables is below 2', async () => {
-        const { user1, dcnManager } = await loadFixture(setupTldMinted);
+      it('Should revert if labels is below 2', async () => {
+        const { user1, dcnMockManager, dcnRegistry } = await loadFixture(setupBasicRegistryMock);
 
         await expect(
-          dcnManager
-            .connect(user1)
-            .mint(user1.address, [C.MOCK_TLD], C.ONE_YEAR, 0)
-        ).to.be.revertedWith('Lables length below 2');
+          dcnRegistry
+            .connect(dcnMockManager)
+            .mint(user1.address, [C.MOCK_TLD], C.ZERO_ADDRESS, C.ONE_YEAR)
+        ).to.be.revertedWith('Labels length below 2');
       });
     });
 
@@ -582,7 +582,7 @@ describe('DcnRegistry', function () {
 
       await dcnManager
         .connect(admin)
-        .mintTLD(admin.address, C.MOCK_TLD, C.ONE_YEAR);
+        .mintTld(admin.address, C.MOCK_TLD, C.ONE_YEAR);
 
       await expect(
         dcnRegistry

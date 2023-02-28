@@ -8,7 +8,7 @@ library VehicleIdStorage {
         keccak256("ResolverRegistry.VehicleId.storage");
 
     struct Storage {
-        address idProxyAddress;
+        address vehicleIdProxyAddress;
         mapping(bytes32 => uint256) nodeToVehicleIds;
         mapping(uint256 => bytes32) vehicleIdToNodes;
     }

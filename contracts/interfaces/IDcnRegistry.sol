@@ -7,26 +7,26 @@ import "@openzeppelin/contracts-upgradeable/access/IAccessControlUpgradeable.sol
 interface IDcnRegistry is IERC721Upgradeable, IAccessControlUpgradeable {
     function setBaseURI(string calldata baseURI_) external;
 
-    function setDefaultResolver(address _resolver) external;
+    function setDefaultResolver(address resolver_) external;
 
-    function mintTLD(
+    function mintTld(
         address to,
         string calldata label,
-        address _resolver,
+        address resolver_,
         uint256 duration
     ) external;
 
     function mint(
         address to,
         string[] calldata labels,
-        address _resolver,
+        address resolver_,
         uint256 duration
     ) external returns (bytes32 node);
 
     function claim(
         address to,
         bytes32 node,
-        address _resolver,
+        address resolver_,
         uint256 duration
     ) external;
 
@@ -34,11 +34,11 @@ interface IDcnRegistry is IERC721Upgradeable, IAccessControlUpgradeable {
 
     function setRecord(
         bytes32 node,
-        address _resolver,
+        address resolver_,
         uint256 duration
     ) external;
 
-    function setResolver(bytes32 node, address _resolver) external;
+    function setResolver(bytes32 node, address resolver_) external;
 
     function setExpiration(bytes32 node, uint256 duration) external;
 

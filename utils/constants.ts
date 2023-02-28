@@ -34,3 +34,4 @@ export const DCN_REGISTRY_NFT_BASE_URI = 'https://dimo.zone/dcn/';
 
 export const MOCK_TLD = 'dimo';
 export const MOCK_LABELS = ['label1', 'dimo'];
+export const MOCK_LABELS_3 = ['label2', 'label1', 'dimo'];

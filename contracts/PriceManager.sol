@@ -24,13 +24,13 @@ contract PriceManager is
         _disableInitializers();
     }
 
-    function initialize(uint256 _basePrice) external {
+    function initialize(uint256 basePrice_) external {
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
-        basePrice = _basePrice;
+        basePrice = basePrice_;
     }
 
     /// @notice Sets the base price
@@ -43,7 +43,7 @@ contract PriceManager is
     }
 
     /// @notice Gets the minting price given the wanted duration
-    /// @param duration Duration wanted
+    /// @param duration Duration wanted (in seconds)
     /// @return price Minting price
     function getPrice(uint256 duration) external view returns (uint256 price) {
         price = basePrice * duration;

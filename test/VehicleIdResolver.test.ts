@@ -134,9 +134,9 @@ describe('VehicleResolver', function () {
 
                 await expect(
                     vehicleIdResolverInstance
-                    .connect(mockDcnManager)
-                    .setVehicleId(mockTldNamehash, 1)
-                ).to.be.revertedWith('Owners does not match');                
+                        .connect(mockDcnManager)
+                        .setVehicleId(mockTldNamehash, 1)
+                ).to.be.revertedWith('Owners does not match');
             });
         });
 

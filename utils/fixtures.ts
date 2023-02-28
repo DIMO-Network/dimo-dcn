@@ -89,6 +89,65 @@ export async function setupBasic() {
     };
 }
 
+export async function setupBasicRegistryMock() {
+    upgrades.silenceWarnings();
+    const [deployer, admin, nonAdmin, user1, user2, foundation, dcnMockManager] = await ethers.getSigners();
+
+    let resolverInstance: ResolverRegistry;
+    let vehicleIdResolverInstance: VehicleIdResolver;
+    let sharedInstance: Shared;
+    [resolverInstance, vehicleIdResolverInstance, sharedInstance] = await initialize(deployer, 'VehicleIdResolver', 'Shared');
+
+    const MockDimoTokenFactory = await ethers.getContractFactory('MockDimoToken');
+    const DcnRegistryFactory = await ethers.getContractFactory('DcnRegistry');
+    const mockDimoToken = await upgrades.deployProxy(MockDimoTokenFactory, [], { initializer: false, kind: "uups" }) as MockDimoToken;
+    const dcnRegistry = await upgrades.deployProxy(DcnRegistryFactory, [], { initializer: false, kind: "uups" }) as DcnRegistry;
+
+    await dcnRegistry.connect(deployer).initialize(
+        C.DCN_REGISTRY_NFT_NAME,
+        C.DCN_REGISTRY_NFT_SYMBOL,
+        C.DCN_REGISTRY_NFT_BASE_URI,
+        resolverInstance.address,
+        dcnMockManager.address
+    );
+    await resolverInstance.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
+
+    await sharedInstance.connect(admin).setFoundationAddress(foundation.address);
+    await sharedInstance.connect(admin).setDimoToken(mockDimoToken.address);
+    await sharedInstance.connect(admin).setDcnManager(dcnMockManager.address);
+    await sharedInstance.connect(admin).setDcnRegistry(dcnRegistry.address);
+
+
+    await dcnRegistry.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
+    await dcnRegistry.connect(deployer).grantRole(C.MINTER_ROLE, admin.address);
+
+
+    tracer.nameTags[deployer.address] = 'Deployer';
+    tracer.nameTags[admin.address] = 'Admin';
+    tracer.nameTags[nonAdmin.address] = 'Non Admin';
+    tracer.nameTags[user1.address] = 'User1';
+    tracer.nameTags[user2.address] = 'User2';
+    tracer.nameTags[foundation.address] = 'Foundation';
+
+    tracer.nameTags[dcnMockManager.address] = 'DCN Mock Manager';
+    tracer.nameTags[dcnRegistry.address] = 'DCN Registry';
+    tracer.nameTags[mockDimoToken.address] = 'Mock Dimo Token';
+
+    return {
+        deployer,
+        admin,
+        nonAdmin,
+        user1,
+        user2,
+        foundation,
+        mockDimoToken,
+        dcnMockManager,
+        dcnRegistry,
+        resolverInstance,
+        vehicleIdResolverInstance
+    };
+}
+
 export async function mocks() {
     const MockDimoTokenFactory = await ethers.getContractFactory('MockDimoToken');
     const mockDimoToken = await upgrades.deployProxy(MockDimoTokenFactory, [], { initializer: false, kind: "uups" }) as MockDimoToken;
@@ -113,7 +172,7 @@ export async function setupTldMinted() {
 
     await vars.dcnManager
         .connect(vars.admin)
-        .mintTLD(vars.admin.address, C.MOCK_TLD, C.ONE_YEAR);
+        .mintTld(vars.admin.address, C.MOCK_TLD, C.ONE_YEAR);
 
     await vars.mockDimoToken
         .connect(vars.user1)
