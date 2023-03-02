@@ -26,7 +26,8 @@
   "homepage": "https://github.com/DIMO-Network/dimo-dcn#readme",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
-    "hardhat": "^2.12.5"
+    "hardhat": "^2.12.5",
+    "hardhat-tracer": "^2.0.0"
   },
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "^4.8.0",

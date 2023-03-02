@@ -8,7 +8,9 @@ library VehicleIdStorage {
         keccak256("ResolverRegistry.VehicleId.storage");
 
     struct Storage {
-        mapping(bytes32 => uint256) vehicleIds;
+        address vehicleIdProxyAddress;
+        mapping(bytes32 => uint256) nodeToVehicleIds;
+        mapping(uint256 => bytes32) vehicleIdToNodes;
     }
 
     /* solhint-disable no-inline-assembly */

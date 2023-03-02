@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
-contract DCNRegistry is
+/// @title DcnRegistry
+/// @notice Contract that contains all date regarding names and basic functions to manage them
+contract DcnRegistry is
     Initializable,
     ERC721Upgradeable,
     AccessControlUpgradeable,
@@ -17,26 +19,34 @@ contract DCNRegistry is
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant TRANSFERER_ROLE = keccak256("TRANSFERER_ROLE");
 
+    event NewNode(bytes32 indexed node, address indexed owner);
     event NewResolver(bytes32 indexed node, address resolver);
-    event NewTTL(bytes32 indexed node, uint72 ttl);
+    event NewExpiration(bytes32 indexed node, uint256 expiration);
     event NewBaseURI(string indexed baseURI);
     event NewDefaultResolver(address indexed defaultResolver);
 
     struct Record {
         address resolver;
-        uint72 ttl;
+        uint256 expires;
     }
 
     string public baseURI;
     address public defaultResolver;
+    address public dcnManager;
     mapping(bytes32 => Record) public records;
 
-    // Permits modifications only by the owner of the specified node.
+    modifier exists(bytes32 node) {
+        require(_exists(uint256(node)), "Node does not exist");
+        _;
+    }
+
     modifier authorized(bytes32 node) {
-        require(
-            hasRole(ADMIN_ROLE, msg.sender) ||
-                _isApprovedOrOwner(msg.sender, uint256(node))
-        );
+        require(_isApprovedOrOwner(msg.sender, uint256(node)));
+        _;
+    }
+
+    modifier onlyDcnManager() {
+        require(msg.sender == dcnManager, "Only DCN Manager");
         _;
     }
 
@@ -48,27 +58,31 @@ contract DCNRegistry is
     /// ----- EXTERNAL FUNCTIONS ----- ///
 
     /// @notice Initialize function to be called after deployment
-    /// @param _name Token name
-    /// @param _symbol Token symbol
+    /// @param name_ Token name
+    /// @param symbol_ Token symbol
     /// @param baseURI_ Base URI
-    /// @param _defaultResolver Default resolver
+    /// @param defaultResolver_ Default resolver
+    /// @param dcnManager_ DCN Manager address
     function initialize(
-        string calldata _name,
-        string calldata _symbol,
+        string calldata name_,
+        string calldata symbol_,
         string calldata baseURI_,
-        address _defaultResolver
+        address defaultResolver_,
+        address dcnManager_
     ) external initializer {
-        __ERC721_init_unchained(_name, _symbol);
+        __ERC721_init_unchained(name_, symbol_);
         __AccessControl_init_unchained();
         __UUPSUpgradeable_init_unchained();
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
         _setBaseURI(baseURI_);
-        _setDefaultResolver(_defaultResolver);
+        _setDefaultResolver(defaultResolver_);
+        dcnManager = dcnManager_;
 
+        // Initial mint to ensure data consistency when _validateNamehash
         _mint(msg.sender, uint256(0x00));
-        _setRecord(0x00, address(0), ~uint72(0));
+        _setExpiration(0x00, ~uint256(0) - block.timestamp);
     }
 
     /// @notice Sets the base URI
@@ -82,79 +96,123 @@ contract DCNRegistry is
 
     /// @notice Sets the default resolver
     /// @dev Caller must have the admin role
-    /// @param _defaultResolver the new default resolver address
+    /// @param defaultResolver_ the new default resolver address
     function setDefaultResolver(
-        address _defaultResolver
+        address defaultResolver_
     ) external onlyRole(ADMIN_ROLE) {
-        _setDefaultResolver(_defaultResolver);
+        _setDefaultResolver(defaultResolver_);
     }
 
     /// @notice Registers a new name and mints its corresponding token
-    /// @dev Caller must have the minter role
+    /// @dev Caller must be the DCN Manager
+    /// @param to Token owner
+    /// @param label Label to become a TLD
+    /// @param resolver_ The address of the resolver to be set
+    /// @param duration Period before name expires (in seconds)
+    function mintTld(
+        address to,
+        string calldata label,
+        address resolver_,
+        uint256 duration
+    ) external onlyDcnManager {
+        bytes32 node = _namehash(0x00, label);
+        _mintWithRecords(to, node, resolver_, duration);
+    }
+
+    /// @notice Registers a new name and mints its corresponding token
+    /// @dev To mint ['a', 'b', 'c'], ['b', 'c'] has to exist
+    /// @dev Caller must be the DCN Manager
+    /// @dev Validates namehash before registering
     /// @param to Token owner
     /// @param labels List of labels (e.g ['label1', 'tld'] -> label1.tld)
-    /// @param _resolver The address of the resolver to be set
-    /// @param _ttl The TTL in seconds to be set
+    /// @param resolver_ The address of the resolver to be set
+    /// @param duration Period before name expires (in seconds)
     function mint(
         address to,
         string[] calldata labels,
-        address _resolver,
-        uint72 _ttl
-    ) external onlyRole(MINTER_ROLE) {
-        _mintWithRecords(to, labels, _resolver, _ttl);
+        address resolver_,
+        uint256 duration
+    ) external onlyDcnManager returns (bytes32 node) {
+        node = _validateNamehash(labels);
+        _mintWithRecords(to, node, resolver_, duration);
     }
 
-    /// @notice Sets the record for a node
-    /// @dev Caller must have the admin role
-    /// @param node The node to update
-    /// @param _resolver The address of the resolver to be set
-    /// @param _ttl The TTL in seconds to be set
-    function setRecord(
+    /// @notice Renews the expiration of a node
+    /// @dev Caller must be the DCN Manager
+    /// @param node The node to be renewed
+    /// @param duration The duration to extend the expiration (in seconds)
+    function renew(bytes32 node, uint256 duration) external onlyDcnManager {
+        uint256 currentExpiration = records[node].expires;
+        uint256 newExpiration;
+
+        if (currentExpiration > block.timestamp) {
+            // The node has not expired, it extends from the current expiration date
+            newExpiration = currentExpiration + duration;
+        } else {
+            // The node has expired, it extends from the current timestamp
+            newExpiration = block.timestamp + duration;
+        }
+
+        _setExpiration(node, newExpiration);
+    }
+
+    /// @notice Claims the ownership of a token if it is expired
+    /// @dev Caller must be the DCN Manager
+    /// @dev The claimer is able to reset the resolver and duration
+    /// @param to The new token owner
+    /// @param node The node to be claimed
+    /// @param resolver_ The address of the resolver to be set
+    /// @param duration Period before name expires (in seconds)
+    function claim(
+        address to,
         bytes32 node,
-        address _resolver,
-        uint72 _ttl
-    ) external onlyRole(ADMIN_ROLE) {
-        require(_exists(uint256(node)), "Node does not exist");
-        _setRecord(node, _resolver, _ttl);
+        address resolver_,
+        uint256 duration
+    ) external onlyDcnManager {
+        // Checks internally if the token is minted, so we save a check
+        _burn(uint256(node));
+        require(records[node].expires < block.timestamp, "Not available");
+        _mintWithRecords(to, node, resolver_, duration);
     }
 
     /// @notice Sets the resolver address for the specified node
-    /// @dev Caller must have the admin role
+    /// @dev Caller must be the DCN Manager and node must exist
     /// @param node The node to update
-    /// @param _resolver The address of the resolver to be set
+    /// @param resolver_ The address of the resolver to be set
     function setResolver(
         bytes32 node,
-        address _resolver
-    ) external onlyRole(ADMIN_ROLE) {
-        require(_exists(uint256(node)), "Node does not exist");
-        _setResolver(node, _resolver);
+        address resolver_
+    ) external onlyDcnManager exists(node) {
+        _setResolver(node, resolver_);
     }
 
-    /// @notice Sets the TTL for the specified node
-    /// @dev Caller must have the admin role
+    /// @notice Sets the expiration for the specified node
+    /// @dev Caller must be the DCN Manager and node must exist
     /// @param node The node to update
-    /// @param _ttl The TTL in seconds to be set
-    function setTTL(bytes32 node, uint72 _ttl) external onlyRole(ADMIN_ROLE) {
-        require(_exists(uint256(node)), "Node does not exist");
-        _setTTL(node, _ttl);
+    /// @param duration Period before name expires (in seconds)
+    function setExpiration(
+        bytes32 node,
+        uint256 duration
+    ) external onlyDcnManager exists(node) {
+        _setExpiration(node, block.timestamp + duration);
     }
 
     /// ----- EXTERNAL VIEW FUNCTIONS ----- ///
 
     /// @dev Returns the address of the resolver for the specified node
     /// @param node The specified node
-    /// @return _resolver address of the resolver
-    function resolver(bytes32 node) external view returns (address _resolver) {
-        _resolver = records[node].resolver == address(0)
+    /// @return resolver_ address of the resolver
+    function resolver(bytes32 node) external view returns (address resolver_) {
+        resolver_ = records[node].resolver == address(0)
             ? defaultResolver
             : records[node].resolver;
     }
 
-    /// @dev Returns the TTL of a node
+    /// @dev Returns the expiration of a node
     /// @param node The specified node
-    /// @return _ttl time to live of the node
-    function ttl(bytes32 node) external view returns (uint72 _ttl) {
-        _ttl = records[node].ttl;
+    /// @return expires_ expiration of the node
+    function expires(bytes32 node) external view returns (uint256 expires_) {
+        expires_ = records[node].expires;
     }
 
     /// @dev Returns whether a record has been imported to the registry
@@ -195,10 +253,10 @@ contract DCNRegistry is
 
     /// @dev Internal function to set the default resolver
     /// @dev Resolver cannot be the zero address
-    /// @param _resolver Resolver address to be set
-    function _setDefaultResolver(address _resolver) internal {
-        require(_resolver != address(0), "Zero address");
-        defaultResolver = _resolver;
+    /// @param resolver_ Resolver address to be set
+    function _setDefaultResolver(address resolver_) internal {
+        require(resolver_ != address(0), "Zero address");
+        defaultResolver = resolver_;
         emit NewDefaultResolver(defaultResolver);
     }
 
@@ -215,56 +273,6 @@ contract DCNRegistry is
         super._transfer(from, to, tokenId);
     }
 
-    /// @dev Internal function to egister a new name and mints its corresponding token
-    /// @dev Validates namehash before registering
-    /// @param to Token owner
-    /// @param labels List of labels (e.g ['label1', 'tld'] -> label1.tld)
-    /// @param _resolver The address of the resolver to be set
-    /// @param _ttl The TTL in seconds to be set
-    function _mintWithRecords(
-        address to,
-        string[] calldata labels,
-        address _resolver,
-        uint72 _ttl
-    ) internal {
-        bytes32 node = _validateNamehash(labels);
-
-        _mint(to, uint256(node));
-        _setRecord(node, _resolver, _ttl);
-    }
-
-    /// @dev Internal function to set the record for a node
-    /// @param node The node to update
-    /// @param _resolver The address of the resolver to be set
-    /// @param _ttl The TTL in seconds to be set
-    function _setRecord(bytes32 node, address _resolver, uint72 _ttl) internal {
-        if (_resolver != records[node].resolver) {
-            records[node].resolver = _resolver;
-            emit NewResolver(node, _resolver);
-        }
-
-        if (_ttl != records[node].ttl) {
-            records[node].ttl = _ttl;
-            emit NewTTL(node, _ttl);
-        }
-    }
-
-    /// @dev Internal function to set the resolver address for the specified node
-    /// @param node The node to update
-    /// @param _resolver The address of the resolver to be set
-    function _setResolver(bytes32 node, address _resolver) internal {
-        records[node].resolver = _resolver;
-        emit NewResolver(node, _resolver);
-    }
-
-    /// @dev Internal function to set the TTL for the specified node
-    /// @param node The node to update
-    /// @param _ttl The TTL in seconds to be set
-    function _setTTL(bytes32 node, uint72 _ttl) internal {
-        records[node].ttl = _ttl;
-        emit NewTTL(node, _ttl);
-    }
-
     /// @dev Internal function called when upgrading the contract
     /// @dev Caller must have the upgrader role
     function _authorizeUpgrade(
@@ -272,6 +280,44 @@ contract DCNRegistry is
     ) internal override onlyRole(UPGRADER_ROLE) {}
 
     /// ----- PRIVATE FUNCTIONS ----- ///
+
+    /// @dev Private function to register a new name and mints its corresponding token
+    /// @param to Token owner
+    /// @param node Namehash to be recorded
+    /// @param resolver_ The address of the resolver to be set
+    /// @param duration Period before name expires (in seconds)
+    /// @return tokenId Token Id generated from namehash
+    function _mintWithRecords(
+        address to,
+        bytes32 node,
+        address resolver_,
+        uint256 duration
+    ) private returns (uint256 tokenId) {
+        tokenId = uint256(node);
+
+        _mint(to, tokenId);
+
+        emit NewNode(node, to);
+
+        _setResolver(node, resolver_);
+        _setExpiration(node, block.timestamp + duration);
+    }
+
+    /// @dev Private function to set the resolver address for the specified node
+    /// @param node The node to update
+    /// @param resolver_ The address of the resolver to be set
+    function _setResolver(bytes32 node, address resolver_) private {
+        records[node].resolver = resolver_;
+        emit NewResolver(node, resolver_);
+    }
+
+    /// @dev Private function to set the expiration for the specified node
+    /// @param node The node to update
+    /// @param expiration Period before name expires
+    function _setExpiration(bytes32 node, uint256 expiration) private {
+        records[node].expires = expiration;
+        emit NewExpiration(node, expiration);
+    }
 
     /// @dev Calculates the name hash of a label given the parent node
     /// @param node Parent node hash
@@ -294,6 +340,7 @@ contract DCNRegistry is
     function _validateNamehash(
         string[] calldata labels
     ) private view returns (bytes32 node) {
+        require(labels.length >= 2, "Labels length below 2");
         for (uint256 i = labels.length; i > 0; i--) {
             require(_exists(uint256(node)), "Parent node does not exist");
             node = _namehash(node, labels[i - 1]);

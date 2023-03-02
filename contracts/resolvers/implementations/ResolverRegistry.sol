@@ -8,11 +8,11 @@ import {MANAGER_RESOLVER_ROLE} from "../shared/Roles.sol";
 import "@solidstate/contracts/access/access_control/AccessControl.sol";
 
 /// @title ResolverRegistry
-/// @notice Entry point of all calls to Resolvers and resolver-module manager
+/// @notice Entry point of all calls to Resolvers and module manager
 contract ResolverRegistry is AccessControl {
-    event ResolverAdded(address indexed resolverAddr, bytes4[] selectors);
-    event ResolverRemoved(address indexed resolverAddr, bytes4[] selectors);
-    event ResolverUpdated(
+    event ModuleAdded(address indexed moduleAddr, bytes4[] selectors);
+    event ModuleRemoved(address indexed moduleAddr, bytes4[] selectors);
+    event ModuleUpdated(
         address indexed oldImplementation,
         address indexed newImplementation,
         bytes4[] oldSelectors,
@@ -24,7 +24,7 @@ contract ResolverRegistry is AccessControl {
         _grantRole(MANAGER_RESOLVER_ROLE, msg.sender);
     }
 
-    /// @notice pass a call to a resolver
+    /// @notice pass a call to a module
     /* solhint-disable no-complex-fallback, payable-fallback, no-inline-assembly */
     fallback() external {
         address implementation = RegistryStorage.getStorage().implementations[
@@ -53,21 +53,21 @@ contract ResolverRegistry is AccessControl {
 
     /* solhint-enable no-complex-fallback, payable-fallback, no-inline-assembly */
 
-    /// @notice Updates resolver
+    /// @notice Updates module
     /// @dev oldImplementation should be registered
-    /// @param oldImplementation address of the resolver to remove
-    /// @param newImplementation address of the resolver to register
+    /// @param oldImplementation address of the module to remove
+    /// @param newImplementation address of the module to register
     /// @param oldSelectors old function signatures list
     /// @param newSelectors new function signatures list
-    function updateResolver(
+    function updateModule(
         address oldImplementation,
         address newImplementation,
         bytes4[] calldata oldSelectors,
         bytes4[] calldata newSelectors
     ) external onlyRole(MANAGER_RESOLVER_ROLE) {
-        _removeResolver(oldImplementation, oldSelectors);
-        _addResolver(newImplementation, newSelectors);
-        emit ResolverUpdated(
+        _removeModule(oldImplementation, oldSelectors);
+        _addModule(newImplementation, newSelectors);
+        emit ModuleUpdated(
             oldImplementation,
             newImplementation,
             oldSelectors,
@@ -75,35 +75,35 @@ contract ResolverRegistry is AccessControl {
         );
     }
 
-    /// @notice Adds a new resolver
+    /// @notice Adds a new module
     /// @dev function selector should not have been registered
     /// @param implementation address of the implementation
     /// @param selectors selectors of the implementation contract
-    function addResolver(address implementation, bytes4[] calldata selectors)
+    function addModule(address implementation, bytes4[] calldata selectors)
         external
         onlyRole(MANAGER_RESOLVER_ROLE)
     {
-        _addResolver(implementation, selectors);
-        emit ResolverAdded(implementation, selectors);
+        _addModule(implementation, selectors);
+        emit ModuleAdded(implementation, selectors);
     }
 
-    /// @notice Removes a resolver and supported functions
+    /// @notice Removes a module and supported functions
     /// @dev function selector should not exist
     /// @param implementation implementation address
     /// @param selectors function selectors
-    function removeResolver(address implementation, bytes4[] calldata selectors)
+    function removeModule(address implementation, bytes4[] calldata selectors)
         external
         onlyRole(MANAGER_RESOLVER_ROLE)
     {
-        _removeResolver(implementation, selectors);
-        emit ResolverRemoved(implementation, selectors);
+        _removeModule(implementation, selectors);
+        emit ModuleRemoved(implementation, selectors);
     }
 
-    /// @notice Adds a new resolver
+    /// @notice Adds a new module
     /// @dev function selector should not have been registered
     /// @param implementation address of the implementation
     /// @param selectors selectors of the implementation contract
-    function _addResolver(address implementation, bytes4[] calldata selectors)
+    function _addModule(address implementation, bytes4[] calldata selectors)
         private
     {
         RegistryStorage.Storage storage s = RegistryStorage.getStorage();
@@ -123,11 +123,11 @@ contract ResolverRegistry is AccessControl {
         s.selectorsHash[implementation] = hash;
     }
 
-    /// @notice Removes a resolver and supported functions
+    /// @notice Removes a module and supported functions
     /// @dev function selector should not exist
     /// @param implementation implementation address
     /// @param selectors function selectors
-    function _removeResolver(address implementation, bytes4[] calldata selectors)
+    function _removeModule(address implementation, bytes4[] calldata selectors)
         private
     {
         RegistryStorage.Storage storage s = RegistryStorage.getStorage();
@@ -140,7 +140,7 @@ contract ResolverRegistry is AccessControl {
         for (uint256 i = 0; i < selectors.length; i++) {
             require(
                 s.implementations[selectors[i]] == implementation,
-                "Selector registered in another resolver"
+                "Selector registered in another module"
             );
             s.implementations[selectors[i]] = address(0);
         }
