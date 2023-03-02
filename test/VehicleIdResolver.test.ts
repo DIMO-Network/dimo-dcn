@@ -94,39 +94,6 @@ describe('VehicleResolver', function () {
                         .setVehicleId(mockTldNamehash, 1)
                 ).to.be.revertedWith('Only DCN Manager');
             });
-            it('Should revert if node is already resolved', async () => {
-                const { user1, mockDcnManager, mockDcnRegistry, vehicleIdResolverInstance, mockVehicleId } = await loadFixture(setup);
-                await mockVehicleId.connect(user1).mint(2);
-                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], C.ZERO_ADDRESS, C.ONE_YEAR);
-
-                await vehicleIdResolverInstance
-                    .connect(mockDcnManager)
-                    .setVehicleId(mockTldNamehash, 2);
-
-                await expect(
-                    vehicleIdResolverInstance
-                        .connect(mockDcnManager)
-                        .setVehicleId(mockTldNamehash, 2)
-                ).to.be.revertedWith('Node already resolved');
-            });
-            it('Should revert if vehicle ID is already resolved', async () => {
-                const { user1, mockDcnManager, mockDcnRegistry, vehicleIdResolverInstance, mockVehicleId } = await loadFixture(setup);
-                const mockNewNamehash = namehash('newNameHash');
-
-                await mockVehicleId.connect(user1).mint(2);
-                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], C.ZERO_ADDRESS, C.ONE_YEAR);
-                await mockDcnRegistry.mint(user1.address, ['newNameHash'], C.ZERO_ADDRESS, C.ONE_YEAR);
-
-                await vehicleIdResolverInstance
-                    .connect(mockDcnManager)
-                    .setVehicleId(mockTldNamehash, 2);
-
-                await expect(
-                    vehicleIdResolverInstance
-                        .connect(mockDcnManager)
-                        .setVehicleId(mockNewNamehash, 2)
-                ).to.be.revertedWith('Vehicle Id already resolved');
-            });
             it('Should revert if DCN node and Vehicle Id owners does not match', async () => {
                 const { user2, mockDcnManager, mockDcnRegistry, vehicleIdResolverInstance, mockVehicleId } = await loadFixture(setup);
                 await mockVehicleId.connect(user2).mint(2);

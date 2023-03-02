@@ -114,8 +114,8 @@ contract DcnRegistry is
         string calldata label,
         address resolver_,
         uint256 duration
-    ) external onlyDcnManager {
-        bytes32 node = _namehash(0x00, label);
+    ) external onlyDcnManager returns (bytes32 node) {
+        node = _namehash(0x00, label);
         _mintWithRecords(to, node, resolver_, duration);
     }
 

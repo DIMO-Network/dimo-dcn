@@ -10,6 +10,7 @@ import {
     DcnRegistry,
     ResolverRegistry,
     VehicleIdResolver,
+    NameResolver,
     Shared
 } from '../typechain-types';
 
@@ -19,8 +20,14 @@ export async function setupBasic() {
 
     let resolverInstance: ResolverRegistry;
     let vehicleIdResolverInstance: VehicleIdResolver;
+    let nameResolverInstance: NameResolver;
     let sharedInstance: Shared;
-    [resolverInstance, vehicleIdResolverInstance, sharedInstance] = await initialize(deployer, 'VehicleIdResolver', 'Shared');
+    [
+        resolverInstance,
+        vehicleIdResolverInstance,
+        nameResolverInstance,
+        sharedInstance
+    ] = await initialize(deployer, 'VehicleIdResolver', 'NameResolver', 'Shared');
 
     const MockDimoTokenFactory = await ethers.getContractFactory('MockDimoToken');
     const MockPriceManager = await ethers.getContractFactory('MockPriceManager');
@@ -85,7 +92,8 @@ export async function setupBasic() {
         dcnManager,
         dcnRegistry,
         resolverInstance,
-        vehicleIdResolverInstance
+        vehicleIdResolverInstance,
+        nameResolverInstance
     };
 }
 

@@ -14,7 +14,7 @@ interface IDcnRegistry is IERC721Upgradeable, IAccessControlUpgradeable {
         string calldata label,
         address resolver_,
         uint256 duration
-    ) external;
+    ) external returns (bytes32 node);
 
     function mint(
         address to,
