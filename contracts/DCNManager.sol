@@ -78,7 +78,10 @@ contract DcnManager is
         uint256 duration,
         uint256 vehicleId
     ) external {
+        uint256 labelLength0 = bytes(labels[0]).length;
+
         require(labels.length == 2, "Only 2 labels");
+        require(labelLength0 > 2 && labelLength0 < 16, "Length 3-15");
 
         dimoToken.transferFrom(
             msg.sender,
@@ -92,7 +95,7 @@ contract DcnManager is
             resolver.setVehicleId(node, vehicleId);
         }
 
-        resolver.setName(node, concat(labels));
+        resolver.setName(node, _concat(labels));
     }
 
     /// @notice Sets the resolver address for the specified node
@@ -167,7 +170,8 @@ contract DcnManager is
         address newImplementation
     ) internal override onlyRole(UPGRADER_ROLE) {}
 
-    function concat(
+    // TODO Documentation
+    function _concat(
         string[] calldata str
     ) private pure returns (string memory output) {
         uint256 length = str.length;
@@ -176,5 +180,32 @@ contract DcnManager is
         for (uint256 i = 1; i < length; i++) {
             output = string(abi.encodePacked(output, ".", str[i]));
         }
+    }
+
+    // TODO Documentation
+    function _validate(
+        string memory label
+    ) private pure returns (string memory) {
+        bytes memory b = bytes(label);
+        uint256 labelLength = b.length;
+
+        if (labelLength < 3) revert("Invalid label");
+        if (labelLength > 15) revert("Invalid label");
+
+        for (uint8 i = 0; i < labelLength; i++) {
+            bytes1 bLetter = b[i];
+
+            // A-Z
+            if (bLetter > 0x40 && bLetter < 0x5B) {
+                b[i] = bLetter | 0x20;
+            } else if (
+                !(bLetter > 0x2F && bLetter < 0x3A) && // 9-0
+                !(bLetter > 0x60 && bLetter < 0x7B) // a-z
+            ) {
+                revert("Invalid label");
+            }
+        }
+
+        return string(b);
     }
 }

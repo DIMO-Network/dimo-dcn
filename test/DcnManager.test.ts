@@ -47,6 +47,24 @@ describe('DcnManager', function () {
             .mint(user1.address, C.MOCK_LABELS_3, C.ONE_YEAR, 0)
         ).to.be.revertedWith('Only 2 labels');
       });
+      it('Should revert if label name length is less than 3', async () => {
+        const { user1, dcnManager } = await loadFixture(setupTldMinted);
+
+        await expect(
+          dcnManager
+            .connect(user1)
+            .mint(user1.address, C.MOCK_LABELS_SHORT, C.ONE_YEAR, 0)
+        ).to.be.revertedWith('Length 3-15');
+      });
+      it('Should revert if label name length is greater than 15', async () => {
+        const { user1, dcnManager } = await loadFixture(setupTldMinted);
+
+        await expect(
+          dcnManager
+            .connect(user1)
+            .mint(user1.address, C.MOCK_LABELS_LONG, C.ONE_YEAR, 0)
+        ).to.be.revertedWith('Length 3-15');
+      });
     });
   });
 
