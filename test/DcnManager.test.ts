@@ -1,4 +1,4 @@
-import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
+import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 
 import { C, namehash, setupBasic, setupTldMinted } from '../utils';
@@ -54,7 +54,7 @@ describe('DcnManager', function () {
           dcnManager
             .connect(user1)
             .mint(user1.address, C.MOCK_LABELS_SHORT, C.ONE_YEAR, 0)
-        ).to.be.revertedWith('Length 3-15');
+        ).to.be.revertedWithCustomError(dcnManager, 'InvalidLength');
       });
       it('Should revert if label name length is greater than 15', async () => {
         const { user1, dcnManager } = await loadFixture(setupTldMinted);
@@ -63,7 +63,31 @@ describe('DcnManager', function () {
           dcnManager
             .connect(user1)
             .mint(user1.address, C.MOCK_LABELS_LONG, C.ONE_YEAR, 0)
-        ).to.be.revertedWith('Length 3-15');
+            ).to.be.revertedWithCustomError(dcnManager, 'InvalidLength');
+      });
+      it('Should revert if label has characters other than [A-Z|a-z|0-9]', async () => {
+        const { user1, dcnManager } = await loadFixture(setupTldMinted);
+
+        await expect(
+          dcnManager
+            .connect(user1)
+            .mint(user1.address, C.MOCK_LABELS_WRONG_CHARS, C.ONE_YEAR, 0)
+            ).to.be.revertedWithCustomError(dcnManager, 'InvalidCharacter');
+      });
+    });
+
+    context('State', () => {
+      it('Should convert uppercase to lowercase', async () => {
+        const { user1, dcnManager, dcnRegistry } = await loadFixture(setupTldMinted);
+
+        await dcnManager
+          .connect(user1)
+          .mint(user1.address, C.MOCK_LABELS_UPPERCASE, C.ONE_YEAR, 0);
+
+        const latestBlock = await time.latestBlock();
+        const newNode = (await dcnRegistry.queryFilter(dcnRegistry.filters.NewNode(), latestBlock))[0].args.node;
+
+        expect(newNode).to.be.equal(namehash(C.MOCK_LABELS));
       });
     });
   });

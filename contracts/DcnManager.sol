@@ -10,6 +10,9 @@ import "./interfaces/IDcnRegistry.sol";
 import "./interfaces/IPriceManager.sol";
 import "./interfaces/IResolver.sol";
 
+error InvalidLength();
+error InvalidCharacter();
+
 /// @title DcnManager
 /// @notice Contract to manage DCN minting, price and vehicle ID resolution
 contract DcnManager is
@@ -74,14 +77,13 @@ contract DcnManager is
     /// @param vehicleId The vehicle ID to be associated to the DCN node
     function mint(
         address to,
-        string[] calldata labels,
+        string[] memory labels,
         uint256 duration,
         uint256 vehicleId
     ) external {
-        uint256 labelLength0 = bytes(labels[0]).length;
-
         require(labels.length == 2, "Only 2 labels");
-        require(labelLength0 > 2 && labelLength0 < 16, "Length 3-15");
+
+        labels[0] = _validate(labels[0]);
 
         dimoToken.transferFrom(
             msg.sender,
@@ -170,9 +172,11 @@ contract DcnManager is
         address newImplementation
     ) internal override onlyRole(UPGRADER_ROLE) {}
 
-    // TODO Documentation
+    /// @dev Concatenates an array of strings in the format
+    /// ['string1','string2'] -> 'string1.string2
+    /// @param str Array of strings to be concatenated
     function _concat(
-        string[] calldata str
+        string[] memory str
     ) private pure returns (string memory output) {
         uint256 length = str.length;
         output = str[0];
@@ -182,27 +186,33 @@ contract DcnManager is
         }
     }
 
-    // TODO Documentation
+    /// @dev Validates a label to be recorded
+    /// @dev Length must be between 3 and 15 characters
+    /// @dev All characters must be [A-Z][a-z][0-9]
+    /// @dev All characters are converted to lowercase if needed
+    /// @param label Label to be verified
     function _validate(
         string memory label
     ) private pure returns (string memory) {
         bytes memory b = bytes(label);
         uint256 labelLength = b.length;
 
-        if (labelLength < 3) revert("Invalid label");
-        if (labelLength > 15) revert("Invalid label");
+        if (labelLength < 3) revert InvalidLength();
+        if (labelLength > 15) revert InvalidLength();
 
-        for (uint8 i = 0; i < labelLength; i++) {
-            bytes1 bLetter = b[i];
+        bytes1 bLetter;
+        for (uint256 i = 0; i < labelLength; i++) {
+            bLetter = b[i];
 
             // A-Z
             if (bLetter > 0x40 && bLetter < 0x5B) {
+                // To lowercase
                 b[i] = bLetter | 0x20;
             } else if (
                 !(bLetter > 0x2F && bLetter < 0x3A) && // 9-0
                 !(bLetter > 0x60 && bLetter < 0x7B) // a-z
             ) {
-                revert("Invalid label");
+                revert InvalidCharacter();
             }
         }
 
