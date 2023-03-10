@@ -161,12 +161,12 @@ describe('DcnRegistry', function () {
         ).to.be.revertedWith('Only DCN Manager');
       });
       it('Should revert if label is empty', async () => {
-        const { dcnManager, admin } = await loadFixture(setupBasic);
+        const { admin, dcnMockManager, dcnRegistry } = await loadFixture(setupBasicRegistryMock);
 
         await expect(
-          dcnManager
-            .connect(admin)
-            .mintTld(admin.address, '', C.ONE_YEAR)
+          dcnRegistry
+            .connect(dcnMockManager)
+            .mintTld(admin.address, '', C.ZERO_ADDRESS, C.ONE_YEAR)
         ).to.be.revertedWith('Empty label');
       });
     });
@@ -258,12 +258,16 @@ describe('DcnRegistry', function () {
         ).to.be.revertedWith('Parent node does not exist');
       });
       it('Should revert if label is empty', async () => {
-        const { user1, dcnManager } = await loadFixture(setupTldMinted);
+        const { user1, dcnMockManager, dcnRegistry } = await loadFixture(setupBasicRegistryMock);
+
+        await dcnRegistry
+            .connect(dcnMockManager)
+            .mintTld(user1.address, C.MOCK_TLD, C.ZERO_ADDRESS, C.ONE_YEAR);
 
         await expect(
-          dcnManager
-            .connect(user1)
-            .mint(user1.address, ['', C.MOCK_TLD], C.ONE_YEAR, 0)
+          dcnRegistry
+            .connect(dcnMockManager)
+            .mint(user1.address, ['', C.MOCK_TLD], C.ZERO_ADDRESS, C.ONE_YEAR)
         ).to.be.revertedWith('Empty label');
       });
       it('Should revert if labels is below 2', async () => {
