@@ -340,7 +340,7 @@ contract DcnRegistry is
     function _validateNamehash(
         string[] calldata labels
     ) private view returns (bytes32 node) {
-        require(labels.length >= 2, "Labels length below 2");
+        require(labels.length > 1, "Labels length below 2");
         for (uint256 i = labels.length; i > 0; i--) {
             require(_exists(uint256(node)), "Parent node does not exist");
             node = _namehash(node, labels[i - 1]);
