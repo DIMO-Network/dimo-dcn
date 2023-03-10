@@ -36,25 +36,19 @@ contract VehicleIdResolver is AccessControlInternal {
     }
 
     /// @notice Sets the address associated with an DCN node
-    /// May only be called by the owner of that node in the DCN registry
     /// @param node The node to update
     /// @param vehicleId_ The vehicle ID to be set
     function setVehicleId(
         bytes32 node,
         uint256 vehicleId_
     ) external onlyDcnManager {
-        SharedStorage.Storage storage s = SharedStorage.getStorage();
         VehicleIdStorage.Storage storage vs = VehicleIdStorage.getStorage();
 
         require(
-            IDcnRegistry(s.dcnRegistry).ownerOf(uint256(node)) ==
-                INFT(vs.vehicleIdProxyAddress).ownerOf(vehicleId_),
+            IDcnRegistry(SharedStorage.getStorage().dcnRegistry).ownerOf(
+                uint256(node)
+            ) == INFT(vs.vehicleIdProxyAddress).ownerOf(vehicleId_),
             "Owners does not match"
-        );
-        require(vs.nodeToVehicleIds[node] == 0, "Node already resolved");
-        require(
-            vs.vehicleIdToNodes[vehicleId_] == 0x00,
-            "Vehicle Id already resolved"
         );
 
         vs.nodeToVehicleIds[node] = vehicleId_;

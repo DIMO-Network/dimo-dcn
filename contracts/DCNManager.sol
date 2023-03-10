@@ -61,7 +61,8 @@ contract DcnManager is
         string calldata label,
         uint256 duration
     ) external onlyRole(TLD_MINTER_ROLE) {
-        dcnRegistry.mintTld(to, label, address(0), duration);
+        bytes32 node = dcnRegistry.mintTld(to, label, address(0), duration);
+        resolver.setName(node, label);
     }
 
     /// @notice Mints a DNC node and maps vehicle ID if set
@@ -90,6 +91,8 @@ contract DcnManager is
         if (vehicleId != 0) {
             resolver.setVehicleId(node, vehicleId);
         }
+
+        resolver.setName(node, concat(labels));
     }
 
     /// @notice Sets the resolver address for the specified node
@@ -164,9 +167,14 @@ contract DcnManager is
         address newImplementation
     ) internal override onlyRole(UPGRADER_ROLE) {}
 
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view override returns (bool) {
-        return super.supportsInterface(interfaceId);
+    function concat(
+        string[] calldata str
+    ) private pure returns (string memory output) {
+        uint256 length = str.length;
+        output = str[0];
+
+        for (uint256 i = 1; i < length; i++) {
+            output = string(abi.encodePacked(output, ".", str[i]));
+        }
     }
 }

@@ -36,4 +36,10 @@ interface IResolver {
     function nodeByVehicleId(
         uint256 vehicleId_
     ) external view returns (bytes32 node);
+
+    /// ----- Name Resolver ----- ///
+
+    function setName(bytes32 node, string calldata name) external;
+
+    function name(bytes32 node) external view returns (string memory name_);
 }
