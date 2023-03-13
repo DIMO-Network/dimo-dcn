@@ -1,9 +1,10 @@
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
+import { ethers } from 'hardhat';
 
 import { C, namehash, setupBasic, setupTldMinted } from '../utils';
 
-describe('DcnManager', function () {
+describe('DcnManager', () => {
   describe('initialize', () => {
     context('State', () => {
       it('Should correctly set the DCN Registry address', async () => {
@@ -15,6 +16,24 @@ describe('DcnManager', function () {
         const { deployer, dcnManager } = await loadFixture(setupBasic);
 
         expect(await dcnManager.hasRole(C.DEFAULT_ADMIN_ROLE, deployer.address)).to.be.true;
+      });
+    });
+  });
+
+  describe('setUnallowedLabel', () => {
+    context('Error handling', () => {
+      it('Should revert if caller does not have the ADMIN_ROLE', async () => {
+        const unallowedArray = new Array(C.MOCK_UNALLOWED_LABELS.length).fill(true);
+        const { nonAdmin, dcnManager } = await loadFixture(setupBasic);
+
+        await expect(
+          dcnManager
+            .connect(nonAdmin)
+            .setUnallowedLabel(C.MOCK_UNALLOWED_LABELS, unallowedArray)
+        ).to.be.revertedWith(
+          `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.ADMIN_ROLE
+          }`
+        );
       });
     });
   });
@@ -32,6 +51,41 @@ describe('DcnManager', function () {
           `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.TLD_MINTER_ROLE
           }`
         );
+      });
+    });
+  });
+
+  describe('mintByAdmin', () => {
+    context('Error handling', () => {
+      it('Should revert if caller does not have the MINTER_ROLE', async () => {
+        const { nonAdmin, user1, dcnManager } = await loadFixture(setupBasic);
+
+        await expect(
+          dcnManager
+            .connect(nonAdmin)
+            .mintByAdmin(user1.address, C.MOCK_LABELS, C.ONE_YEAR)
+        ).to.be.revertedWith(
+          `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.MINTER_ROLE
+          }`
+        );
+      });
+    });
+
+    context('State', () => {
+      it('Should mint unallowed label by an admin', async () => {
+        const mockNamehash = namehash([C.MOCK_UNALLOWED_LABEL_1, C.MOCK_TLD]);
+        const tokenId = ethers.BigNumber.from(mockNamehash).toString();
+        const { admin, user1, dcnManager, dcnRegistry } = await loadFixture(setupTldMinted);
+
+        await dcnManager
+          .connect(admin)
+          .setUnallowedLabel([C.MOCK_UNALLOWED_LABEL_1], [true]);
+
+        await dcnManager
+          .connect(admin)
+          .mintByAdmin(user1.address, [C.MOCK_UNALLOWED_LABEL_1, C.MOCK_TLD], C.ONE_YEAR);
+
+        expect(await dcnRegistry.ownerOf(tokenId)).to.equal(user1.address);
       });
     });
   });
@@ -63,7 +117,7 @@ describe('DcnManager', function () {
           dcnManager
             .connect(user1)
             .mint(user1.address, C.MOCK_LABELS_LONG, C.ONE_YEAR, 0)
-            ).to.be.revertedWithCustomError(dcnManager, 'InvalidLength');
+        ).to.be.revertedWithCustomError(dcnManager, 'InvalidLength');
       });
       it('Should revert if label has characters other than [A-Z|a-z|0-9]', async () => {
         const { user1, dcnManager } = await loadFixture(setupTldMinted);
@@ -72,7 +126,20 @@ describe('DcnManager', function () {
           dcnManager
             .connect(user1)
             .mint(user1.address, C.MOCK_LABELS_WRONG_CHARS, C.ONE_YEAR, 0)
-            ).to.be.revertedWithCustomError(dcnManager, 'InvalidCharacter');
+        ).to.be.revertedWithCustomError(dcnManager, 'InvalidCharacter');
+      });
+      it('Should revert if label is unallowed', async () => {
+        const { admin, user1, dcnManager } = await loadFixture(setupTldMinted);
+
+        await dcnManager
+          .connect(admin)
+          .setUnallowedLabel([C.MOCK_UNALLOWED_LABEL_1], [true]);
+
+        await expect(
+          dcnManager
+            .connect(user1)
+            .mint(user1.address, [C.MOCK_UNALLOWED_LABEL_1, C.MOCK_TLD], C.ONE_YEAR, 0)
+        ).to.be.revertedWithCustomError(dcnManager, 'UnallowedLabel');
       });
     });
 

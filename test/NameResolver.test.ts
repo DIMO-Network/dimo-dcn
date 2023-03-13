@@ -5,7 +5,7 @@ import { ethers } from 'hardhat';
 import { C, initialize, namehash, mocks } from '../utils';
 import { ResolverRegistry, NameResolver, Shared } from '../typechain-types';
 
-describe('NameResolver', function () {
+describe('NameResolver', () => {
     async function setup() {
         const [deployer, admin, nonAdmin, user1, user2, foundation, mockDcnManager, nonDcnManager] = await ethers.getSigners();
 

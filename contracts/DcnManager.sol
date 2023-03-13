@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -12,6 +12,7 @@ import "./interfaces/IResolver.sol";
 
 error InvalidLength();
 error InvalidCharacter();
+error UnallowedLabel();
 
 /// @title DcnManager
 /// @notice Contract to manage DCN minting, price and vehicle ID resolution
@@ -23,12 +24,14 @@ contract DcnManager is
     bytes32 constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 constant TLD_MINTER_ROLE = keccak256("TLD_MINTER_ROLE");
+    bytes32 constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     IDimo public dimoToken;
     IDcnRegistry public dcnRegistry;
     IPriceManager public priceManager;
     IResolver public resolver;
     address public foundation;
+    mapping(string label => bool unallowed) private unallowedLabels;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -54,6 +57,16 @@ contract DcnManager is
         foundation = foundation_;
     }
 
+    /// TODO Documentation
+    function setUnallowedLabel(
+        string[] calldata labels,
+        bool[] calldata unallowed
+    ) external onlyRole(ADMIN_ROLE) {
+        for (uint i = 0; i < labels.length; i++) {
+            unallowedLabels[labels[i]] = unallowed[i];
+        }
+    }
+
     /// @notice Mints a top level domain (e.g. .dimo)
     /// @dev Only a TLD minter can mint
     /// @param to The token owner
@@ -66,6 +79,20 @@ contract DcnManager is
     ) external onlyRole(TLD_MINTER_ROLE) {
         bytes32 node = dcnRegistry.mintTld(to, label, address(0), duration);
         resolver.setName(node, label);
+    }
+
+    /// @notice Admin function to mint a DNC node without restrictions
+    /// @dev To mint ['a', 'b'], ['b'] has to exist
+    /// @param to Token owner
+    /// @param labels List of labels (e.g ['label1', 'tld'] -> label1.tld)
+    /// @param duration Period before name expires (in seconds)
+    function mintByAdmin(
+        address to,
+        string[] memory labels,
+        uint256 duration
+    ) external onlyRole(MINTER_ROLE) {
+        bytes32 node = dcnRegistry.mint(to, labels, address(0), duration);
+        resolver.setName(node, _concat(labels));
     }
 
     /// @notice Mints a DNC node and maps vehicle ID if set
@@ -190,11 +217,12 @@ contract DcnManager is
     /// @dev Length must be between 3 and 15 characters
     /// @dev All characters must be [A-Z][a-z][0-9]
     /// @dev All characters are converted to lowercase if needed
-    /// @param label Label to be verified
+    /// @dev Label must not be unallowed
+    /// @param label_ Label to be verified
     function _validate(
-        string memory label
-    ) private pure returns (string memory) {
-        bytes memory b = bytes(label);
+        string memory label_
+    ) private view returns (string memory label) {
+        bytes memory b = bytes(label_);
         uint256 labelLength = b.length;
 
         if (labelLength < 3) revert InvalidLength();
@@ -216,6 +244,8 @@ contract DcnManager is
             }
         }
 
-        return string(b);
+        label = string(b);
+
+        if (unallowedLabels[label]) revert UnallowedLabel();
     }
 }

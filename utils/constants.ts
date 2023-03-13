@@ -27,6 +27,9 @@ export const UPGRADER_ROLE = ethers.utils.keccak256(
 export const TRANSFERER_ROLE = ethers.utils.keccak256(
     ethers.utils.toUtf8Bytes('TRANSFERER_ROLE')
 );
+export const MANAGER_ROLE = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes('MANAGER_ROLE')
+);
 
 export const DCN_REGISTRY_NFT_NAME = 'Dimo Canonical Name';
 export const DCN_REGISTRY_NFT_SYMBOL = 'DCN';
@@ -41,3 +44,9 @@ export const MOCK_LABELS_3 = ['label2', 'label1', 'dimo'];
 export const MOCK_LABELS_SHORT = ['l', 'dimo'];
 export const MOCK_LABELS_LONG = ['labelabelabelabelabelabelabel', 'dimo'];
 export const MOCK_LABELS_WRONG_CHARS = ['Ln57&%_', 'dimo'];
+
+// Unallowed labels
+export const MOCK_UNALLOWED_LABEL_1 = 'unallowedlabel1';
+export const MOCK_UNALLOWED_LABEL_2 = 'unallowedlabel2';
+export const MOCK_UNALLOWED_LABEL_3 = 'unallowedlabel3';
+export const MOCK_UNALLOWED_LABELS = [MOCK_UNALLOWED_LABEL_1, MOCK_UNALLOWED_LABEL_2, MOCK_UNALLOWED_LABEL_3];

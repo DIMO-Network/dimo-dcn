@@ -4,7 +4,7 @@ import { ethers } from 'hardhat';
 
 import { C, namehash, setupBasic, setupTldMinted, setupVehicleMinted, setupBasicRegistryMock } from '../utils';
 
-describe('DcnRegistry', function () {
+describe('DcnRegistry', () => {
   describe('initialize', () => {
     context('State', () => {
       it('Should correctly set the name', async () => {
@@ -152,13 +152,16 @@ describe('DcnRegistry', function () {
   describe('mintTld', () => {
     context('Error handling', () => {
       it('Should revert if caller is not the DCN Manager', async () => {
-        const { nonAdmin, user1, dcnRegistry } = await loadFixture(setupBasic);
+        const { nonManager, user1, dcnRegistry } = await loadFixture(setupBasic);
 
         await expect(
           dcnRegistry
-            .connect(nonAdmin)
+            .connect(nonManager)
             .mintTld(user1.address, C.MOCK_TLD, C.ZERO_ADDRESS, C.ONE_YEAR)
-        ).to.be.revertedWith('Only DCN Manager');
+        ).to.be.revertedWith(
+          `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
+          }`
+        );
       });
       it('Should revert if label is empty', async () => {
         const { admin, dcnMockManager, dcnRegistry } = await loadFixture(setupBasicRegistryMock);
@@ -233,13 +236,16 @@ describe('DcnRegistry', function () {
 
     context('Error handling', () => {
       it('Should revert if caller is not the DCN Manager', async () => {
-        const { user1, dcnRegistry } = await loadFixture(setupTldMinted);
+        const { user1, nonManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
         await expect(
           dcnRegistry
-            .connect(user1)
+            .connect(nonManager)
             .mint(user1.address, C.MOCK_LABELS, C.ZERO_ADDRESS, C.ONE_YEAR)
-        ).to.be.revertedWith('Only DCN Manager');
+        ).to.be.revertedWith(
+          `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
+          }`
+        );
       });
       it('Should revert if parent node does not exist', async () => {
         const { user1, dcnManager, mockDimoToken } = await loadFixture(setupBasic);
@@ -335,14 +341,17 @@ describe('DcnRegistry', function () {
     const mockNamehash = namehash(C.MOCK_LABELS);
 
     context('Error handling', () => {
-      it.skip('Should revert if caller is not the DCN Manager', async () => {
-        const { user1, dcnRegistry } = await loadFixture(setupVehicleMinted);
+      it('Should revert if caller is not the DCN Manager', async () => {
+        const { user1, nonManager, dcnRegistry } = await loadFixture(setupVehicleMinted);
 
         await expect(
           dcnRegistry
-            .connect(user1)
-            .claim(user1.address, mockNamehash, C.ONE_YEAR, 0)
-        ).to.be.revertedWith('Only DCN Manager');
+            .connect(nonManager)
+            .claim(user1.address, mockNamehash, C.ZERO_ADDRESS, C.ONE_YEAR)
+        ).to.be.revertedWith(
+          `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
+          }`
+        );
       });
       it('Should revert if node does not exist', async () => {
         const { user1, dcnManager } = await loadFixture(setupVehicleMinted);
@@ -417,13 +426,16 @@ describe('DcnRegistry', function () {
 
     context('Error handling', () => {
       it('Should revert if caller is not the DCN Manager', async () => {
-        const { user1, dcnRegistry } = await loadFixture(setupBasic);
+        const { user1, nonManager, dcnRegistry } = await loadFixture(setupBasic);
 
         await expect(
           dcnRegistry
-            .connect(user1)
+            .connect(nonManager)
             .renew(mockNamehash, C.ONE_YEAR)
-        ).to.be.revertedWith("Only DCN Manager");
+        ).to.be.revertedWith(
+          `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
+          }`
+        );
       });
     });
     context('State', () => {
@@ -476,13 +488,16 @@ describe('DcnRegistry', function () {
 
     context('Error handling', () => {
       it('Should revert if caller is not the DCN Manager', async () => {
-        const { nonAdmin, dcnRegistry } = await loadFixture(setupTldMinted);
+        const { nonManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
         await expect(
           dcnRegistry
-            .connect(nonAdmin)
+            .connect(nonManager)
             .setResolver(mockTldNamehash, C.ZERO_ADDRESS)
-        ).to.be.revertedWith("Only DCN Manager");
+        ).to.be.revertedWith(
+          `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
+          }`
+        );
       });
       it('Should revert if record does not exist', async () => {
         const { admin, dcnManager } = await loadFixture(setupBasic);
@@ -528,13 +543,16 @@ describe('DcnRegistry', function () {
 
     context('Error handling', () => {
       it('Should revert if caller is not the DCN Manager', async () => {
-        const { nonAdmin, dcnRegistry } = await loadFixture(setupTldMinted);
+        const { nonManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
         await expect(
           dcnRegistry
-            .connect(nonAdmin)
+            .connect(nonManager)
             .setExpiration(mockTldNamehash, C.TWO_YEARS)
-        ).to.be.revertedWith("Only DCN Manager");
+        ).to.be.revertedWith(
+          `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
+          }`
+        );
       });
       it('Should revert if record does not exist', async () => {
         const { admin, dcnManager } = await loadFixture(setupBasic);

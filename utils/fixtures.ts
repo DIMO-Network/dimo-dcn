@@ -16,7 +16,7 @@ import {
 
 export async function setupBasic() {
     upgrades.silenceWarnings();
-    const [deployer, admin, nonAdmin, user1, user2, foundation] = await ethers.getSigners();
+    const [deployer, admin, nonAdmin, nonManager, user1, user2, foundation] = await ethers.getSigners();
 
     let resolverInstance: ResolverRegistry;
     let vehicleIdResolverInstance: VehicleIdResolver;
@@ -63,9 +63,11 @@ export async function setupBasic() {
 
     await dcnManager.connect(deployer).grantRole(C.TLD_MINTER_ROLE, admin.address);
     await dcnManager.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
+    await dcnManager.connect(deployer).grantRole(C.MINTER_ROLE, admin.address);
 
     await dcnRegistry.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
     await dcnRegistry.connect(deployer).grantRole(C.MINTER_ROLE, admin.address);
+    await dcnRegistry.connect(deployer).grantRole(C.MANAGER_ROLE, dcnManager.address);
 
     await mockPriceManager.connect(deployer).setBasePrice(C.MINTING_COST);
 
@@ -85,6 +87,7 @@ export async function setupBasic() {
         deployer,
         admin,
         nonAdmin,
+        nonManager,
         user1,
         user2,
         foundation,
@@ -125,10 +128,9 @@ export async function setupBasicRegistryMock() {
     await sharedInstance.connect(admin).setDcnManager(dcnMockManager.address);
     await sharedInstance.connect(admin).setDcnRegistry(dcnRegistry.address);
 
-
     await dcnRegistry.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
     await dcnRegistry.connect(deployer).grantRole(C.MINTER_ROLE, admin.address);
-
+    await dcnRegistry.connect(deployer).grantRole(C.MANAGER_ROLE, dcnMockManager.address);
 
     tracer.nameTags[deployer.address] = 'Deployer';
     tracer.nameTags[admin.address] = 'Admin';

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -15,7 +15,7 @@ contract DcnRegistry is
     UUPSUpgradeable
 {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant TRANSFERER_ROLE = keccak256("TRANSFERER_ROLE");
 
@@ -33,20 +33,10 @@ contract DcnRegistry is
     string public baseURI;
     address public defaultResolver;
     address public dcnManager;
-    mapping(bytes32 => Record) public records;
+    mapping(bytes32 node => Record) public records;
 
     modifier exists(bytes32 node) {
         require(_exists(uint256(node)), "Node does not exist");
-        _;
-    }
-
-    modifier authorized(bytes32 node) {
-        require(_isApprovedOrOwner(msg.sender, uint256(node)));
-        _;
-    }
-
-    modifier onlyDcnManager() {
-        require(msg.sender == dcnManager, "Only DCN Manager");
         _;
     }
 
@@ -114,7 +104,7 @@ contract DcnRegistry is
         string calldata label,
         address resolver_,
         uint256 duration
-    ) external onlyDcnManager returns (bytes32 node) {
+    ) external onlyRole(MANAGER_ROLE) returns (bytes32 node) {
         node = _namehash(0x00, label);
         _mintWithRecords(to, node, resolver_, duration);
     }
@@ -132,7 +122,7 @@ contract DcnRegistry is
         string[] calldata labels,
         address resolver_,
         uint256 duration
-    ) external onlyDcnManager returns (bytes32 node) {
+    ) external onlyRole(MANAGER_ROLE) returns (bytes32 node) {
         node = _validateNamehash(labels);
         _mintWithRecords(to, node, resolver_, duration);
     }
@@ -141,7 +131,10 @@ contract DcnRegistry is
     /// @dev Caller must be the DCN Manager
     /// @param node The node to be renewed
     /// @param duration The duration to extend the expiration (in seconds)
-    function renew(bytes32 node, uint256 duration) external onlyDcnManager {
+    function renew(
+        bytes32 node,
+        uint256 duration
+    ) external onlyRole(MANAGER_ROLE) {
         uint256 currentExpiration = records[node].expires;
         uint256 newExpiration;
 
@@ -168,7 +161,7 @@ contract DcnRegistry is
         bytes32 node,
         address resolver_,
         uint256 duration
-    ) external onlyDcnManager {
+    ) external onlyRole(MANAGER_ROLE) {
         // Checks internally if the token is minted, so we save a check
         _burn(uint256(node));
         require(records[node].expires < block.timestamp, "Not available");
@@ -182,7 +175,7 @@ contract DcnRegistry is
     function setResolver(
         bytes32 node,
         address resolver_
-    ) external onlyDcnManager exists(node) {
+    ) external onlyRole(MANAGER_ROLE) exists(node) {
         _setResolver(node, resolver_);
     }
 
@@ -193,7 +186,7 @@ contract DcnRegistry is
     function setExpiration(
         bytes32 node,
         uint256 duration
-    ) external onlyDcnManager exists(node) {
+    ) external onlyRole(MANAGER_ROLE) exists(node) {
         _setExpiration(node, block.timestamp + duration);
     }
 

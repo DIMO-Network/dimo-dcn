@@ -3,13 +3,14 @@ import * as dotenv from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
 import '@openzeppelin/hardhat-upgrades';
+import 'hardhat-contract-sizer';
 import 'hardhat-tracer'
 
 dotenv.config();
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: '0.8.17',
+    version: '0.8.18',
     settings: {
       optimizer: {
         enabled: true,
@@ -40,6 +41,12 @@ const config: HardhatUserConfig = {
       polygon: process.env.POLYGONSCAN_API_KEY || '',
       polygonMumbai: process.env.POLYGONSCAN_API_KEY || ''
     }
+  },
+  contractSizer: {
+    alphaSort: true,
+    disambiguatePaths: false,
+    runOnCompile: process.env.CONTRACT_SIZER !== undefined,
+    strict: true
   }
 };
 
