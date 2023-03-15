@@ -256,10 +256,10 @@ async function main() {
 
   const instances = await deployModules(deployer);
   writeAddresses(instances, C.networkName);
-  const contractInstances = await deployContracts(deployer);
-  writeAddresses(contractInstances, C.networkName);
   const instancesWithSelectors = await addModule(deployer);
   writeAddresses(instancesWithSelectors, C.networkName);
+  const contractInstances = await deployContracts(deployer);
+  writeAddresses(contractInstances, C.networkName);
 
   await grantRoles(deployer);
 }

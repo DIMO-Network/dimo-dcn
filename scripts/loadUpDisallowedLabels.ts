@@ -25,9 +25,6 @@ async function main() {
 
     const disallowedListCleanedUp = cleanUpLabels(disallowedList);
     const disallowed = new Array(disallowedList.length).fill(true);
-    for (const label of disallowedListCleanedUp) {
-        console.log(label);
-    }
 
     await dcnManagerInstance.setDisallowedLabels(disallowedListCleanedUp, disallowed);
 }
