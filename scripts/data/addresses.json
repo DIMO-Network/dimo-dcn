@@ -4,10 +4,30 @@
             "ResolverRegistry": {
                 "address": "",
                 "selectors": []
+            },
+            "Shared": {
+                "address": "",
+                "selectors": []
+            },
+            "NameResolver": {
+                "address": "",
+                "selectors": []
+            },
+            "VehicleIdResolver": {
+                "address": "",
+                "selectors": []
             }
         },
         "contracts": {
             "DcnRegistry": {
+                "proxy": "",
+                "implementation": ""
+            },
+            "PriceManager": {
+                "proxy": "",
+                "implementation": ""
+            },
+            "DcnManager": {
                 "proxy": "",
                 "implementation": ""
             }
@@ -18,10 +38,30 @@
             "ResolverRegistry": {
                 "address": "",
                 "selectors": []
+            },
+            "Shared": {
+                "address": "",
+                "selectors": []
+            },
+            "NameResolver": {
+                "address": "",
+                "selectors": []
+            },
+            "VehicleIdResolver": {
+                "address": "",
+                "selectors": []
             }
         },
         "contracts": {
             "DcnRegistry": {
+                "proxy": "",
+                "implementation": ""
+            },
+            "PriceManager": {
+                "proxy": "",
+                "implementation": ""
+            },
+            "DcnManager": {
                 "proxy": "",
                 "implementation": ""
             }
@@ -32,35 +72,112 @@
             "ResolverRegistry": {
                 "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
                 "selectors": [
-                    "0x57d95f67",
+                    "0x0df5b997",
                     "0x248a9ca3",
                     "0x2f2ff15d",
                     "0x91d14854",
-                    "0x16cc7f11",
+                    "0x9748a762",
                     "0x8bb9c5bf",
                     "0xd547741f",
-                    "0xce20c8a4"
+                    "0x06d1d2a1"
+                ]
+            },
+            "Shared": {
+                "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+                "selectors": [
+                    "0x56f98b37",
+                    "0xa1caf728",
+                    "0x5b6c1979",
+                    "0xf41377ca"
+                ]
+            },
+            "NameResolver": {
+                "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+                "selectors": [
+                    "0x691f3431",
+                    "0x77372213"
+                ]
+            },
+            "VehicleIdResolver": {
+                "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+                "selectors": [
+                    "0x01e11675",
+                    "0x1bd59757",
+                    "0xf3cdd5c3",
+                    "0x9bfae6da",
+                    "0x24f9e9da"
                 ]
             }
         },
         "contracts": {
             "DcnRegistry": {
-                "proxy": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-                "implementation": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+                "proxy": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+                "implementation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+            },
+            "PriceManager": {
+                "proxy": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+                "implementation": "0x0165878A594ca255338adfa4d48449f69242Eb8F"
+            },
+            "DcnManager": {
+                "proxy": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+                "implementation": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
             }
         }
     },
     "localhost": {
         "resolvers": {
             "ResolverRegistry": {
-                "address": "",
-                "selectors": []
+                "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+                "selectors": [
+                    "0x0df5b997",
+                    "0x248a9ca3",
+                    "0x2f2ff15d",
+                    "0x91d14854",
+                    "0x9748a762",
+                    "0x8bb9c5bf",
+                    "0xd547741f",
+                    "0x06d1d2a1"
+                ]
+            },
+            "Shared": {
+                "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+                "selectors": [
+                    "0x56f98b37",
+                    "0xa1caf728",
+                    "0x5b6c1979",
+                    "0xf41377ca"
+                ]
+            },
+            "NameResolver": {
+                "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+                "selectors": [
+                    "0x691f3431",
+                    "0x77372213"
+                ]
+            },
+            "VehicleIdResolver": {
+                "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+                "selectors": [
+                    "0x01e11675",
+                    "0x1bd59757",
+                    "0xf3cdd5c3",
+                    "0x9bfae6da",
+                    "0x24f9e9da"
+                ]
             }
         },
         "contracts": {
             "DcnRegistry": {
-                "proxy": "",
-                "implementation": ""
+                "proxy": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+                "implementation": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+            },
+            "PriceManager": {
+                "proxy": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+                "implementation": "0x0165878A594ca255338adfa4d48449f69242Eb8F"
+            },
+            "DcnManager": {
+                "proxy": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+                "implementation": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
             }
         }
     }

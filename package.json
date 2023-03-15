@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "build": "npx hardhat clean && npx hardhat compile",
+    "contract-sizer": "CONTRACT_SIZER=true npm run build",
     "test": "npx hardhat test",
-    "coverage": "npx hardhat coverage"
+    "coverage": "npx hardhat coverage",
+    "gas-report": "REPORT_GAS=true npx hardhat test"
   },
   "repository": {
     "type": "git",
@@ -27,6 +29,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
     "hardhat": "^2.12.5",
+    "hardhat-contract-sizer": "^2.8.0",
     "hardhat-tracer": "^2.0.0"
   },
   "dependencies": {

@@ -5,7 +5,7 @@ import {
     MockDimoToken,
     MockVehicleId,
     MockDcnRegistry,
-    MockPriceManager,
+    PriceManager,
     DcnManager,
     DcnRegistry,
     ResolverRegistry,
@@ -16,7 +16,7 @@ import {
 
 export async function setupBasic() {
     upgrades.silenceWarnings();
-    const [deployer, admin, nonAdmin, user1, user2, foundation] = await ethers.getSigners();
+    const [deployer, admin, nonAdmin, nonManager, user1, user2, foundation] = await ethers.getSigners();
 
     let resolverInstance: ResolverRegistry;
     let vehicleIdResolverInstance: VehicleIdResolver;
@@ -30,20 +30,20 @@ export async function setupBasic() {
     ] = await initialize(deployer, 'VehicleIdResolver', 'NameResolver', 'Shared');
 
     const MockDimoTokenFactory = await ethers.getContractFactory('MockDimoToken');
-    const MockPriceManager = await ethers.getContractFactory('MockPriceManager');
+    const PriceManager = await ethers.getContractFactory('PriceManager');
     const DcnManagerFactory = await ethers.getContractFactory('DcnManager');
     const DcnRegistryFactory = await ethers.getContractFactory('DcnRegistry');
     const mockDimoToken = await upgrades.deployProxy(MockDimoTokenFactory, [], { initializer: false, kind: "uups" }) as MockDimoToken;
     const dcnManager = await upgrades.deployProxy(DcnManagerFactory, [], { initializer: false, kind: "uups" }) as DcnManager;
     const dcnRegistry = await upgrades.deployProxy(DcnRegistryFactory, [], { initializer: false, kind: "uups" }) as DcnRegistry;
-    const mockPriceManager = await upgrades.deployProxy(MockPriceManager, [], { initializer: false, kind: "uups" }) as MockPriceManager;
+    const priceManager = await upgrades.deployProxy(PriceManager, [], { initializer: false, kind: "uups" }) as PriceManager;
 
-    await mockPriceManager.setBasePrice(C.MINTING_COST);
+    await priceManager.connect(deployer).initialize(C.MINTING_COST);
 
     await dcnManager.connect(deployer).initialize(
         mockDimoToken.address,
         dcnRegistry.address,
-        mockPriceManager.address,
+        priceManager.address,
         resolverInstance.address,
         foundation.address
     );
@@ -51,8 +51,7 @@ export async function setupBasic() {
         C.DCN_REGISTRY_NFT_NAME,
         C.DCN_REGISTRY_NFT_SYMBOL,
         C.DCN_REGISTRY_NFT_BASE_URI,
-        resolverInstance.address,
-        dcnManager.address
+        resolverInstance.address
     );
     await resolverInstance.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
 
@@ -63,11 +62,11 @@ export async function setupBasic() {
 
     await dcnManager.connect(deployer).grantRole(C.TLD_MINTER_ROLE, admin.address);
     await dcnManager.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
+    await dcnManager.connect(deployer).grantRole(C.MINTER_ROLE, admin.address);
 
     await dcnRegistry.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
     await dcnRegistry.connect(deployer).grantRole(C.MINTER_ROLE, admin.address);
-
-    await mockPriceManager.connect(deployer).setBasePrice(C.MINTING_COST);
+    await dcnRegistry.connect(deployer).grantRole(C.MANAGER_ROLE, dcnManager.address);
 
     tracer.nameTags[deployer.address] = 'Deployer';
     tracer.nameTags[admin.address] = 'Admin';
@@ -78,13 +77,14 @@ export async function setupBasic() {
 
     tracer.nameTags[dcnManager.address] = 'DCN Manager';
     tracer.nameTags[dcnRegistry.address] = 'DCN Registry';
+    tracer.nameTags[priceManager.address] = 'Price Manager';
     tracer.nameTags[mockDimoToken.address] = 'Mock Dimo Token';
-    tracer.nameTags[mockPriceManager.address] = 'Mock Price Manager';
 
     return {
         deployer,
         admin,
         nonAdmin,
+        nonManager,
         user1,
         user2,
         foundation,
@@ -115,8 +115,7 @@ export async function setupBasicRegistryMock() {
         C.DCN_REGISTRY_NFT_NAME,
         C.DCN_REGISTRY_NFT_SYMBOL,
         C.DCN_REGISTRY_NFT_BASE_URI,
-        resolverInstance.address,
-        dcnMockManager.address
+        resolverInstance.address
     );
     await resolverInstance.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
 
@@ -125,10 +124,9 @@ export async function setupBasicRegistryMock() {
     await sharedInstance.connect(admin).setDcnManager(dcnMockManager.address);
     await sharedInstance.connect(admin).setDcnRegistry(dcnRegistry.address);
 
-
     await dcnRegistry.connect(deployer).grantRole(C.ADMIN_ROLE, admin.address);
     await dcnRegistry.connect(deployer).grantRole(C.MINTER_ROLE, admin.address);
-
+    await dcnRegistry.connect(deployer).grantRole(C.MANAGER_ROLE, dcnMockManager.address);
 
     tracer.nameTags[deployer.address] = 'Deployer';
     tracer.nameTags[admin.address] = 'Admin';

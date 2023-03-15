@@ -5,7 +5,7 @@ import { ethers } from 'hardhat';
 import { C, initialize } from '../utils';
 import { ResolverRegistry, Shared } from '../typechain-types';
 
-describe('Shared', function () {
+describe('Shared', () => {
     async function setup() {
         const [deployer, admin, nonAdmin, foundation] = await ethers.getSigners();
 
