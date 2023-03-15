@@ -3,7 +3,7 @@ import * as path from 'path';
 import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
-import { ResolverRegistry } from '../typechain-types';
+import { DcnManager, DcnRegistry, ResolverRegistry } from '../typechain-types';
 import { getSelectors, ContractAddressesByNetwork } from '../utils';
 import * as C from './data/deployConstants';
 import addressesJSON from './data/addresses.json';
@@ -27,32 +27,33 @@ function writeAddresses(
   console.log('----- Addresses written to file -----\n');
 }
 
-async function deployResolvers(
-  deployer: SignerWithAddress,
-  resolverRegistryName: string
+async function deployModules(
+  deployer: SignerWithAddress
 ): Promise<ContractAddressesByNetwork> {
   console.log('\n----- Deploying contracts -----\n');
 
   const contractNameArgs: any[] = [
-    // { name: '', args: [] }
+    { name: 'Shared', args: [] },
+    { name: 'NameResolver', args: [] },
+    { name: 'VehicleIdResolver', args: [] }
   ];
 
   const instances: ContractAddressesByNetwork = JSON.parse(
     JSON.stringify(contractAddresses)
   );
 
-  // Deploy DIMORegistry Implementation
-  const DIMORegistry = await ethers.getContractFactory(resolverRegistryName);
+  // Deploy ResolverRegistry Implementation
+  const DIMORegistry = await ethers.getContractFactory("ResolverRegistry");
   const resolverRegistryImplementation = await DIMORegistry.connect(
     deployer
   ).deploy();
   await resolverRegistryImplementation.deployed();
 
   console.log(
-    `Contract ${resolverRegistryName} deployed to ${resolverRegistryImplementation.address}`
+    `Contract ResolverRegistry deployed to ${resolverRegistryImplementation.address}`
   );
 
-  instances[C.networkName].resolvers[resolverRegistryName].address =
+  instances[C.networkName].resolvers.ResolverRegistry.address =
     resolverRegistryImplementation.address;
 
   for (const contractNameArg of contractNameArgs) {
@@ -82,6 +83,10 @@ async function deployContracts(
 ): Promise<ContractAddressesByNetwork> {
   console.log('\n----- Deploying contracts -----\n');
 
+  const instances: ContractAddressesByNetwork = JSON.parse(
+    JSON.stringify(contractAddresses)
+  );
+
   const contractNameArgs = [
     {
       name: 'DcnRegistry',
@@ -92,11 +97,11 @@ async function deployContracts(
         contractAddresses[C.networkName].resolvers.ResolverRegistry.address
       ]
     },
+    {
+      name: 'PriceManager',
+      args: [C.PRICE_MANAGER_BASE_PRICE]
+    }
   ];
-
-  const instances: ContractAddressesByNetwork = JSON.parse(
-    JSON.stringify(contractAddresses)
-  );
 
   for (const contractNameArg of contractNameArgs) {
     const ContractFactory = await ethers.getContractFactory(
@@ -129,6 +134,43 @@ async function deployContracts(
       await upgrades.erc1967.getImplementationAddress(contractProxy.address);
   }
 
+  // Deploying DcnManager
+
+  const ContractFactory = await ethers.getContractFactory(
+    'DcnManager',
+    deployer
+  );
+
+  await upgrades.validateImplementation(ContractFactory, {
+    kind: 'uups'
+  });
+
+  const contractProxy = await upgrades.deployProxy(
+    ContractFactory,
+    [
+      C.dimoToken[C.networkName],
+      instances[C.networkName].contracts.DcnRegistry.proxy,
+      instances[C.networkName].contracts.PriceManager.proxy,
+      contractAddresses[C.networkName].resolvers.ResolverRegistry.address,
+      C.foundationAddress[C.networkName]
+    ],
+    {
+      initializer: 'initialize',
+      kind: 'uups'
+    }
+  );
+
+  await contractProxy.deployed();
+
+  console.log(
+    `Contract DcnManager deployed to ${contractProxy.address}`
+  );
+
+  instances[C.networkName].contracts.DcnManager.proxy =
+    contractProxy.address;
+  instances[C.networkName].contracts.DcnManager.implementation =
+    await upgrades.erc1967.getImplementationAddress(contractProxy.address);
+
   console.log('\n----- Contracts deployed -----');
 
   return instances;
@@ -156,7 +198,7 @@ async function addModule(
     };
   });
 
-  console.log('\n----- Adding resolvers -----\n');
+  console.log('\n----- Adding modules -----\n');
 
   for (const contract of contractsNameImpl) {
     const ContractFactory = await ethers.getContractFactory(contract.name);
@@ -175,27 +217,51 @@ async function addModule(
     console.log(`Module ${contract.name} added`);
   }
 
-  console.log('\n----- Resolvers Added -----');
+  console.log('\n----- Modules Added -----');
 
   return instances;
 }
 
 async function grantRoles(deployer: SignerWithAddress) {
-  // TODO
+  const dcnRegistryInstance = await ethers.getContractAt(
+    'DcnRegistry',
+    contractAddresses[C.networkName].contracts.DcnRegistry.proxy
+  ) as DcnRegistry;
+  const resolverRegistryInstance = await ethers.getContractAt(
+    'ResolverRegistry',
+    contractAddresses[C.networkName].resolvers.ResolverRegistry.address
+  ) as ResolverRegistry;
+  const dcnManagerInstance = await ethers.getContractAt(
+    'DcnManager',
+    contractAddresses[C.networkName].contracts.DcnManager.proxy
+  ) as DcnManager;
+
+  console.log('\n----- Granting roles -----');
+
+  await dcnRegistryInstance.connect(deployer).grantRole(C.ADMIN_ROLE, deployer.address);
+  await dcnRegistryInstance.connect(deployer).grantRole(C.MINTER_ROLE, deployer.address);
+  await dcnRegistryInstance.connect(deployer).grantRole(C.MANAGER_ROLE, contractAddresses[C.networkName].contracts.DcnManager.proxy);
+
+  await resolverRegistryInstance.connect(deployer).grantRole(C.ADMIN_ROLE, deployer.address);
+
+  await dcnManagerInstance.connect(deployer).grantRole(C.TLD_MINTER_ROLE, deployer.address);
+  await dcnManagerInstance.connect(deployer).grantRole(C.ADMIN_ROLE, deployer.address);
+  await dcnManagerInstance.connect(deployer).grantRole(C.MINTER_ROLE, deployer.address);
+
+  console.log('----- Roles granted -----\n');
 }
 
 async function main() {
   const [deployer] = await ethers.getSigners();
 
-  const resolvers = await deployResolvers(deployer, "ResolverRegistry");
-  writeAddresses(resolvers, C.networkName);
+  const instances = await deployModules(deployer);
+  writeAddresses(instances, C.networkName);
   const contractInstances = await deployContracts(deployer);
   writeAddresses(contractInstances, C.networkName);
-
   const instancesWithSelectors = await addModule(deployer);
   writeAddresses(instancesWithSelectors, C.networkName);
 
-  // await grantRoles(deployer);
+  await grantRoles(deployer);
 }
 
 main().catch((error) => {

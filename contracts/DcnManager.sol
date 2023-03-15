@@ -10,9 +10,10 @@ import "./interfaces/IDcnRegistry.sol";
 import "./interfaces/IPriceManager.sol";
 import "./interfaces/IResolver.sol";
 
+error InvalidArrayLength();
 error InvalidLength();
 error InvalidCharacter();
-error UnallowedLabel();
+error DisallowedLabel();
 
 /// @title DcnManager
 /// @notice Contract to manage DCN minting, price and vehicle ID resolution
@@ -31,7 +32,7 @@ contract DcnManager is
     IPriceManager public priceManager;
     IResolver public resolver;
     address public foundation;
-    mapping(string label => bool unallowed) private unallowedLabels;
+    mapping(string label => bool disallowed) private disallowedLabels;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -57,13 +58,19 @@ contract DcnManager is
         foundation = foundation_;
     }
 
-    /// TODO Documentation
-    function setUnallowedLabel(
+    /// @notice Set allowed/disallowed to a list of labels
+    /// @dev Caller must have the admin role
+    /// @param labels List of labels to be allowed/disallowed
+    /// @param disallowed Whether a label should be allowed or disallowed
+    function setDisallowedLabels(
         string[] calldata labels,
-        bool[] calldata unallowed
+        bool[] calldata disallowed
     ) external onlyRole(ADMIN_ROLE) {
-        for (uint i = 0; i < labels.length; i++) {
-            unallowedLabels[labels[i]] = unallowed[i];
+        uint256 arrayLength = labels.length;
+        if(arrayLength != disallowed.length) revert InvalidArrayLength();
+
+        for (uint i = 0; i < arrayLength; i++) {
+            disallowedLabels[labels[i]] = disallowed[i];
         }
     }
 
@@ -217,7 +224,7 @@ contract DcnManager is
     /// @dev Length must be between 3 and 15 characters
     /// @dev All characters must be [A-Z][a-z][0-9]
     /// @dev All characters are converted to lowercase if needed
-    /// @dev Label must not be unallowed
+    /// @dev Label must not be disallowed
     /// @param label_ Label to be verified
     function _validate(
         string memory label_
@@ -246,6 +253,6 @@ contract DcnManager is
 
         label = string(b);
 
-        if (unallowedLabels[label]) revert UnallowedLabel();
+        if (disallowedLabels[label]) revert DisallowedLabel();
     }
 }

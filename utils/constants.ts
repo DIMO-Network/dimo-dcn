@@ -45,8 +45,8 @@ export const MOCK_LABELS_SHORT = ['l', 'dimo'];
 export const MOCK_LABELS_LONG = ['labelabelabelabelabelabelabel', 'dimo'];
 export const MOCK_LABELS_WRONG_CHARS = ['Ln57&%_', 'dimo'];
 
-// Unallowed labels
-export const MOCK_UNALLOWED_LABEL_1 = 'unallowedlabel1';
-export const MOCK_UNALLOWED_LABEL_2 = 'unallowedlabel2';
-export const MOCK_UNALLOWED_LABEL_3 = 'unallowedlabel3';
-export const MOCK_UNALLOWED_LABELS = [MOCK_UNALLOWED_LABEL_1, MOCK_UNALLOWED_LABEL_2, MOCK_UNALLOWED_LABEL_3];
+// Disallowed labels
+export const MOCK_DISALLOWED_LABEL_1 = 'disallowed1';
+export const MOCK_DISALLOWED_LABEL_2 = 'disallowed2';
+export const MOCK_DISALLOWED_LABEL_3 = 'disallowed3';
+export const MOCK_DISALLOWED_LABELS = [MOCK_DISALLOWED_LABEL_1, MOCK_DISALLOWED_LABEL_2, MOCK_DISALLOWED_LABEL_3];

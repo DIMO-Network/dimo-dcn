@@ -27,11 +27,6 @@ describe('DcnRegistry', () => {
 
         expect(await dcnRegistry.defaultResolver()).to.equal(resolverInstance.address);
       });
-      it('Should correctly set the DCN Manager', async () => {
-        const { dcnRegistry, dcnManager } = await loadFixture(setupBasic);
-
-        expect(await dcnRegistry.dcnManager()).to.equal(dcnManager.address);
-      });
       it('Should correctly grant DEFAULT_ADMIN_ROLE to deployer', async () => {
         const { deployer, dcnRegistry } = await loadFixture(setupBasic);
 
@@ -151,7 +146,7 @@ describe('DcnRegistry', () => {
 
   describe('mintTld', () => {
     context('Error handling', () => {
-      it('Should revert if caller is not the DCN Manager', async () => {
+      it('Should revert if caller does not have the MANAGER_ROLE', async () => {
         const { nonManager, user1, dcnRegistry } = await loadFixture(setupBasic);
 
         await expect(
@@ -235,7 +230,7 @@ describe('DcnRegistry', () => {
     const mockNamehash = namehash(C.MOCK_LABELS);
 
     context('Error handling', () => {
-      it('Should revert if caller is not the DCN Manager', async () => {
+      it('Should revert if caller does not have the MANAGER_ROLE', async () => {
         const { user1, nonManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
         await expect(
@@ -341,7 +336,7 @@ describe('DcnRegistry', () => {
     const mockNamehash = namehash(C.MOCK_LABELS);
 
     context('Error handling', () => {
-      it('Should revert if caller is not the DCN Manager', async () => {
+      it('Should revert if caller does not have the MANAGER_ROLE', async () => {
         const { user1, nonManager, dcnRegistry } = await loadFixture(setupVehicleMinted);
 
         await expect(
@@ -425,7 +420,7 @@ describe('DcnRegistry', () => {
     const mockNamehash = namehash(C.MOCK_LABELS);
 
     context('Error handling', () => {
-      it('Should revert if caller is not the DCN Manager', async () => {
+      it('Should revert if caller does not have the MANAGER_ROLE', async () => {
         const { user1, nonManager, dcnRegistry } = await loadFixture(setupBasic);
 
         await expect(
@@ -487,7 +482,7 @@ describe('DcnRegistry', () => {
     const mockTldNamehash = namehash(C.MOCK_TLD);
 
     context('Error handling', () => {
-      it('Should revert if caller is not the DCN Manager', async () => {
+      it('Should revert if caller does not have the MANAGER_ROLE', async () => {
         const { nonManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
         await expect(
@@ -542,7 +537,7 @@ describe('DcnRegistry', () => {
     const mockTldNamehash = namehash(C.MOCK_TLD);
 
     context('Error handling', () => {
-      it('Should revert if caller is not the DCN Manager', async () => {
+      it('Should revert if caller does not have the MANAGER_ROLE', async () => {
         const { nonManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
         await expect(

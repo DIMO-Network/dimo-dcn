@@ -24,7 +24,7 @@ contract PriceManager is
         _disableInitializers();
     }
 
-    function initialize(uint256 basePrice_) external {
+    function initialize(uint256 basePrice_) external initializer {
         __AccessControl_init();
         __UUPSUpgradeable_init();
 

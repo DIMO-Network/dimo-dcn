@@ -52,13 +52,11 @@ contract DcnRegistry is
     /// @param symbol_ Token symbol
     /// @param baseURI_ Base URI
     /// @param defaultResolver_ Default resolver
-    /// @param dcnManager_ DCN Manager address
     function initialize(
         string calldata name_,
         string calldata symbol_,
         string calldata baseURI_,
-        address defaultResolver_,
-        address dcnManager_
+        address defaultResolver_
     ) external initializer {
         __ERC721_init_unchained(name_, symbol_);
         __AccessControl_init_unchained();
@@ -68,7 +66,6 @@ contract DcnRegistry is
 
         _setBaseURI(baseURI_);
         _setDefaultResolver(defaultResolver_);
-        dcnManager = dcnManager_;
 
         // Initial mint to ensure data consistency when _validateNamehash
         _mint(msg.sender, uint256(0x00));

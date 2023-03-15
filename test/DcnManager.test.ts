@@ -20,20 +20,30 @@ describe('DcnManager', () => {
     });
   });
 
-  describe('setUnallowedLabel', () => {
+  describe('setDisallowedLabels', () => {
     context('Error handling', () => {
       it('Should revert if caller does not have the ADMIN_ROLE', async () => {
-        const unallowedArray = new Array(C.MOCK_UNALLOWED_LABELS.length).fill(true);
+        const disallowedArray = new Array(C.MOCK_DISALLOWED_LABELS.length).fill(true);
         const { nonAdmin, dcnManager } = await loadFixture(setupBasic);
 
         await expect(
           dcnManager
             .connect(nonAdmin)
-            .setUnallowedLabel(C.MOCK_UNALLOWED_LABELS, unallowedArray)
+            .setDisallowedLabels(C.MOCK_DISALLOWED_LABELS, disallowedArray)
         ).to.be.revertedWith(
           `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.ADMIN_ROLE
           }`
         );
+      });
+      it('Should revert if labels and disallowed arrays length does not match', async () => {
+        const disallowedArrayWrongLength = new Array(C.MOCK_DISALLOWED_LABELS.length - 1).fill(true);
+        const { admin, dcnManager } = await loadFixture(setupBasic);
+
+        await expect(
+          dcnManager
+            .connect(admin)
+            .setDisallowedLabels(C.MOCK_DISALLOWED_LABELS, disallowedArrayWrongLength)
+          ).to.be.revertedWithCustomError(dcnManager, 'InvalidArrayLength');
       });
     });
   });
@@ -72,18 +82,18 @@ describe('DcnManager', () => {
     });
 
     context('State', () => {
-      it('Should mint unallowed label by an admin', async () => {
-        const mockNamehash = namehash([C.MOCK_UNALLOWED_LABEL_1, C.MOCK_TLD]);
+      it('Should mint disallowed label by an admin', async () => {
+        const mockNamehash = namehash([C.MOCK_DISALLOWED_LABEL_1, C.MOCK_TLD]);
         const tokenId = ethers.BigNumber.from(mockNamehash).toString();
         const { admin, user1, dcnManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
         await dcnManager
           .connect(admin)
-          .setUnallowedLabel([C.MOCK_UNALLOWED_LABEL_1], [true]);
+          .setDisallowedLabels([C.MOCK_DISALLOWED_LABEL_1], [true]);
 
         await dcnManager
           .connect(admin)
-          .mintByAdmin(user1.address, [C.MOCK_UNALLOWED_LABEL_1, C.MOCK_TLD], C.ONE_YEAR);
+          .mintByAdmin(user1.address, [C.MOCK_DISALLOWED_LABEL_1, C.MOCK_TLD], C.ONE_YEAR);
 
         expect(await dcnRegistry.ownerOf(tokenId)).to.equal(user1.address);
       });
@@ -128,18 +138,18 @@ describe('DcnManager', () => {
             .mint(user1.address, C.MOCK_LABELS_WRONG_CHARS, C.ONE_YEAR, 0)
         ).to.be.revertedWithCustomError(dcnManager, 'InvalidCharacter');
       });
-      it('Should revert if label is unallowed', async () => {
+      it('Should revert if label is disallowed', async () => {
         const { admin, user1, dcnManager } = await loadFixture(setupTldMinted);
 
         await dcnManager
           .connect(admin)
-          .setUnallowedLabel([C.MOCK_UNALLOWED_LABEL_1], [true]);
+          .setDisallowedLabels([C.MOCK_DISALLOWED_LABEL_1], [true]);
 
         await expect(
           dcnManager
             .connect(user1)
-            .mint(user1.address, [C.MOCK_UNALLOWED_LABEL_1, C.MOCK_TLD], C.ONE_YEAR, 0)
-        ).to.be.revertedWithCustomError(dcnManager, 'UnallowedLabel');
+            .mint(user1.address, [C.MOCK_DISALLOWED_LABEL_1, C.MOCK_TLD], C.ONE_YEAR, 0)
+        ).to.be.revertedWithCustomError(dcnManager, 'DisallowedLabel');
       });
     });
 
