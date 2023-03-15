@@ -59,6 +59,7 @@ contract DcnManager is
     }
 
     /// @notice Set allowed/disallowed to a list of labels
+    /// @dev To ensure consistency, all allowed/disallowed labels must be lowercase
     /// @dev Caller must have the admin role
     /// @param labels List of labels to be allowed/disallowed
     /// @param disallowed Whether a label should be allowed or disallowed
