@@ -3,7 +3,7 @@ import * as path from 'path';
 import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
-import { DcnManager, DcnRegistry, ResolverRegistry } from '../typechain-types';
+import { DcnManager, DcnRegistry, ResolverRegistry, Shared } from '../typechain-types';
 import { getSelectors, ContractAddressesByNetwork } from '../utils';
 import * as C from './data/deployConstants';
 import addressesJSON from './data/addresses.json';
@@ -222,6 +222,29 @@ async function addModule(
   return instances;
 }
 
+async function setup(deployer: SignerWithAddress) {
+  const sharedInstance = await ethers.getContractAt(
+    'Shared',
+    contractAddresses[C.networkName].resolvers.ResolverRegistry.address
+  ) as Shared;
+
+  console.log('\n----- Setting foundation address -----');
+  await sharedInstance.connect(deployer).setFoundationAddress(C.foundationAddress[C.networkName]);
+  console.log('----- Foundation address set -----\n');
+
+  console.log('\n----- Setting DIMO token address -----');
+  await sharedInstance.connect(deployer).setDimoToken(C.dimoToken[C.networkName]);
+  console.log('----- DIMO token address set -----\n');
+
+  console.log('\n----- Setting DcnManager address -----');
+  await sharedInstance.connect(deployer).setDcnManager(contractAddresses[C.networkName].contracts.DcnManager.proxy);
+  console.log('----- DcnManager address set -----\n');
+
+  console.log('\n----- Setting DcnRegistry address -----');
+  await sharedInstance.connect(deployer).setDcnRegistry(contractAddresses[C.networkName].contracts.DcnRegistry.proxy);
+  console.log('----- DcnRegistry addresse set -----\n');
+}
+
 async function grantRoles(deployer: SignerWithAddress) {
   const dcnRegistryInstance = await ethers.getContractAt(
     'DcnRegistry',
@@ -262,6 +285,7 @@ async function main() {
   writeAddresses(contractInstances, C.networkName);
 
   await grantRoles(deployer);
+  await setup(deployer);
 }
 
 main().catch((error) => {
