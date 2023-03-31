@@ -35,9 +35,15 @@ export const foundationAddress: NetworkValue = {
   hardhat: '0xffffffffffffffffffffffffffffffffffffffff',
   localhost: '0xffffffffffffffffffffffffffffffffffffffff'
 };
+export const dimoVehicleIdAddress: NetworkValue = {
+    mumbai: '0x90C4D6113Ec88dd4BDf12f26DB2b3998fd13A144',
+    polygon: '0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF',
+    hardhat: '0xffffffffffffffffffffffffffffffffffffffff',
+    localhost: '0xffffffffffffffffffffffffffffffffffffffff'
+}
 
 export const DCN_REGISTRY_NFT_NAME = 'Dimo Canonical Name';
 export const DCN_REGISTRY_NFT_SYMBOL = 'DCN';
-export const DCN_REGISTRY_NFT_BASE_URI = 'https://dimo.zone/dcn/';
+export const DCN_REGISTRY_NFT_BASE_URI = 'https://devices-api.dimo.zone/v1/dcn/';
 
 export const PRICE_MANAGER_BASE_PRICE = '792744799594'; // 25 / (60 * 60 * 24 * 365), $25 DIMO per year

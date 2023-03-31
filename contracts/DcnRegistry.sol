@@ -32,7 +32,6 @@ contract DcnRegistry is
 
     string public baseURI;
     address public defaultResolver;
-    address public dcnManager;
     mapping(bytes32 node => Record) public records;
 
     modifier exists(bytes32 node) {

@@ -135,5 +135,6 @@ export const disallowedList = [
     'Volvo',
     'Westfield',
     'Yugo',
-    'AutoPi'
+    'AutoPi',
+    'Dimo'
   ];

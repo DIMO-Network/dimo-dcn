@@ -3,7 +3,7 @@ import * as path from 'path';
 import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
-import { DcnManager, DcnRegistry, ResolverRegistry, Shared } from '../typechain-types';
+import { DcnManager, DcnRegistry, ResolverRegistry, Shared, VehicleIdResolver } from '../typechain-types';
 import { getSelectors, ContractAddressesByNetwork } from '../utils';
 import * as C from './data/deployConstants';
 import addressesJSON from './data/addresses.json';
@@ -223,10 +223,18 @@ async function addModule(
 }
 
 async function setup(deployer: SignerWithAddress) {
+  const vehicleIdResolverInstance = await ethers.getContractAt(
+    'VehicleIdResolver',
+    contractAddresses[C.networkName].resolvers.ResolverRegistry.address
+  ) as VehicleIdResolver;
   const sharedInstance = await ethers.getContractAt(
     'Shared',
     contractAddresses[C.networkName].resolvers.ResolverRegistry.address
   ) as Shared;
+
+  console.log('\n----- Setting vehicle ID proxy address -----');
+  await vehicleIdResolverInstance.connect(deployer).setVehicleIdProxyAddress(C.dimoVehicleIdAddress[C.networkName]);
+  console.log('----- Vehicle ID proxy address set -----\n');
 
   console.log('\n----- Setting foundation address -----');
   await sharedInstance.connect(deployer).setFoundationAddress(C.foundationAddress[C.networkName]);
