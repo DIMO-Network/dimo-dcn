@@ -1,0 +1,41 @@
+{
+  "name": "dimo-dcn",
+  "version": "1.0.0",
+  "description": "Device Canonical Name",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx hardhat clean && npx hardhat compile",
+    "contract-sizer": "CONTRACT_SIZER=true npm run build",
+    "test": "npx hardhat test",
+    "coverage": "npx hardhat coverage",
+    "gas-report": "REPORT_GAS=true npx hardhat test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DIMO-Network/dimo-dcn.git"
+  },
+  "keywords": [
+    "DIMO",
+    "solidity",
+    "web3",
+    "ENS"
+  ],
+  "author": "DIMO",
+  "license": "",
+  "bugs": {
+    "url": "https://github.com/DIMO-Network/dimo-dcn/issues"
+  },
+  "homepage": "https://github.com/DIMO-Network/dimo-dcn#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "hardhat": "^2.12.5",
+    "hardhat-contract-sizer": "^2.8.0",
+    "hardhat-tracer": "^2.0.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts-upgradeable": "^4.8.0",
+    "@openzeppelin/hardhat-upgrades": "^1.22.1",
+    "@solidstate/contracts": "^0.0.52",
+    "dotenv": "^16.0.3"
+  }
+}
