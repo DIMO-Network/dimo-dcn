@@ -33,7 +33,8 @@ main([
   'contracts/resolvers/implementations/ResolverRegistry.sol:ResolverRegistry',
   'contracts/resolvers/implementations/NameResolver.sol:NameResolver',
   'contracts/resolvers/implementations/Shared.sol:Shared',
-  'contracts/resolvers/implementations/VehicleIdResolver.sol:VehicleIdResolver'
+  'contracts/resolvers/implementations/VehicleIdResolver.sol:VehicleIdResolver',
+  'contracts/resolvers/implementations/Multicall.sol:Multicall'
 ]).catch((error) => {
   console.error(error);
   process.exitCode = 1;

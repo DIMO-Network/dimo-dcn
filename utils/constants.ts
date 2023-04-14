@@ -35,6 +35,7 @@ export const DCN_REGISTRY_NFT_NAME = 'Dimo Canonical Name';
 export const DCN_REGISTRY_NFT_SYMBOL = 'DCN';
 export const DCN_REGISTRY_NFT_BASE_URI = 'https://dimo.zone/dcn/';
 
+export const MOCK_INVALID_TLD = 'invalidtld';
 export const MOCK_TLD = 'dimo';
 export const MOCK_LABELS = ['label1', 'dimo'];
 export const MOCK_LABELS_UPPERCASE = ['LABEL1', 'dimo'];

@@ -21,6 +21,9 @@ export const TRANSFERER_ROLE = ethers.utils.keccak256(
 export const MANAGER_ROLE = ethers.utils.keccak256(
     ethers.utils.toUtf8Bytes('MANAGER_ROLE')
 );
+export const MANAGER_RESOLVER_ROLE = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes('MANAGER_RESOLVER_ROLE')
+);
 
 export const networkName = network.name;
 export const dimoToken: NetworkValue = {
