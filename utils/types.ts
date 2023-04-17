@@ -1,6 +1,6 @@
 export interface ContractAddressesByNetwork {
     [index: string]: {
-        resolvers: {
+        modules: {
             [index: string]: {
                 address: string,
                 selectors: string[]

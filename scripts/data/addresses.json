@@ -1,6 +1,6 @@
 {
     "polygon": {
-        "resolvers": {
+        "modules": {
             "ResolverRegistry": {
                 "address": "0x60627326F55054Ea448e0a7BC750785bD65EF757",
                 "selectors": [
@@ -39,12 +39,19 @@
                     "0x9bfae6da",
                     "0x24f9e9da"
                 ]
+            },
+            "Multicall": {
+                "address": "0xF69Ce54A3b00bE844404437DF68Aa80aff07C2d4",
+                "selectors": [
+                    "0x415c2d96",
+                    "0x1c0c6e51"
+                ]
             }
         },
         "contracts": {
             "DcnRegistry": {
                 "proxy": "0xE9F4dfE02f895DC17E2e146e578873c9095bA293",
-                "implementation": "0xCeA8a25fD7a26B24c3207D82b462BC82E05DB504"
+                "implementation": "0xDdAaDd6B78e2A7aE99237b89A92507C14f4466d6"
             },
             "PriceManager": {
                 "proxy": "0xB012e1c73073E87aD268844769170B4eE2d5bfb3",
@@ -57,7 +64,7 @@
         }
     },
     "mumbai": {
-        "resolvers": {
+        "modules": {
             "ResolverRegistry": {
                 "address": "0x7CE3b10571b1ca517dEf45D5F81850467eC8dd2D",
                 "selectors": [
@@ -96,12 +103,19 @@
                     "0x9bfae6da",
                     "0x24f9e9da"
                 ]
+            },
+            "Multicall": {
+                "address": "0xD50FA4f8463677F79e434130E449Dc593A578725",
+                "selectors": [
+                    "0x415c2d96",
+                    "0x1c0c6e51"
+                ]
             }
         },
         "contracts": {
             "DcnRegistry": {
                 "proxy": "0x2daeF6FF0E2B61aaBF9ADDE1aFDAfDb4f0f1E660",
-                "implementation": "0x4599d63d6343628CAFb9F42399A3D5Dd87c17283"
+                "implementation": "0xF598A61455dC58A9140A97c2F1F1eA327A614a69"
             },
             "PriceManager": {
                 "proxy": "0x97Fd55d91D42ea01C73fc88DAbBa89944a97FddA",
@@ -114,7 +128,7 @@
         }
     },
     "hardhat": {
-        "resolvers": {
+        "modules": {
             "ResolverRegistry": {
                 "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
                 "selectors": [
@@ -153,25 +167,32 @@
                     "0x9bfae6da",
                     "0x24f9e9da"
                 ]
+            },
+            "Multicall": {
+                "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+                "selectors": [
+                    "0x415c2d96",
+                    "0x1c0c6e51"
+                ]
             }
         },
         "contracts": {
             "DcnRegistry": {
-                "proxy": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
-                "implementation": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
-            },
-            "PriceManager": {
                 "proxy": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
                 "implementation": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
             },
-            "DcnManager": {
+            "PriceManager": {
                 "proxy": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
                 "implementation": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0"
+            },
+            "DcnManager": {
+                "proxy": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+                "implementation": "0x9A676e781A523b5d0C0e43731313A708CB607508"
             }
         }
     },
     "localhost": {
-        "resolvers": {
+        "modules": {
             "ResolverRegistry": {
                 "address": "0xe7126a515Da8c145cc867e915092F067d662eEC4",
                 "selectors": [
@@ -210,6 +231,10 @@
                     "0x9bfae6da",
                     "0x24f9e9da"
                 ]
+            },
+            "Multicall": {
+                "address": "",
+                "selectors": []
             }
         },
         "contracts": {

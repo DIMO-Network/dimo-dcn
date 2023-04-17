@@ -123,6 +123,19 @@ contract DcnRegistry is
         _mintWithRecords(to, node, resolver_, duration);
     }
 
+    /// @notice Burns a TLD
+    /// @dev Caller must have the admin role
+    /// @dev It receives a string, hash it to calculate the correspondent node
+    /// @param label TLD label to be burned
+    function burnTld(string calldata label) external onlyRole(ADMIN_ROLE) {
+        bytes32 tldNode = _namehash(0x00, label);
+
+        _burn(uint256(tldNode));
+
+        records[tldNode].resolver = address(0);
+        records[tldNode].expires = 0;
+    }
+
     /// @notice Renews the expiration of a node
     /// @dev Caller must be the DCN Manager
     /// @param node The node to be renewed

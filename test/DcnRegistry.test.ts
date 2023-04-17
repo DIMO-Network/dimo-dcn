@@ -262,8 +262,8 @@ describe('DcnRegistry', () => {
         const { user1, dcnMockManager, dcnRegistry } = await loadFixture(setupBasicRegistryMock);
 
         await dcnRegistry
-            .connect(dcnMockManager)
-            .mintTld(user1.address, C.MOCK_TLD, C.ZERO_ADDRESS, C.ONE_YEAR);
+          .connect(dcnMockManager)
+          .mintTld(user1.address, C.MOCK_TLD, C.ZERO_ADDRESS, C.ONE_YEAR);
 
         await expect(
           dcnRegistry
@@ -328,6 +328,62 @@ describe('DcnRegistry', () => {
         )
           .to.emit(dcnRegistry, 'NewExpiration')
           .withArgs(mockNamehash, tldExpires);
+      });
+    });
+  });
+
+  describe('burnTld', () => {
+    const mockTldNamehash = namehash(C.MOCK_TLD);
+
+    context('Error handling', () => {
+      it('Should revert if caller does not have the ADMIN_ROLE', async () => {
+        const { nonAdmin, dcnRegistry } = await loadFixture(setupBasic);
+
+        await expect(
+          dcnRegistry
+            .connect(nonAdmin)
+            .burnTld(C.MOCK_TLD)
+        ).to.be.revertedWith(
+          `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.ADMIN_ROLE
+          }`
+        );
+      });
+      it('Should revert if TLD does not exist', async () => {
+        const { admin, dcnRegistry } = await loadFixture(setupBasic);
+
+        await expect(
+          dcnRegistry
+            .connect(admin)
+            .burnTld(C.MOCK_INVALID_TLD)
+        ).to.be.revertedWith('ERC721: invalid token ID');
+      });
+    });
+
+    context('State', () => {
+      it('Should successfully burn the token', async () => {
+        const tokenId = ethers.BigNumber.from(mockTldNamehash).toString();
+        const { admin, dcnRegistry } = await loadFixture(setupTldMinted);
+
+        expect(await dcnRegistry.ownerOf(tokenId)).to.equal(admin.address);
+
+        await dcnRegistry.connect(admin).burnTld(C.MOCK_TLD);
+
+        await expect(
+          dcnRegistry.ownerOf(tokenId)
+        ).to.be.revertedWith('ERC721: invalid token ID');
+      });
+      it('Should reset resolver and expires of the node', async () => {
+        const timeStamp = await time.latest();
+        const tldExpires = ethers.BigNumber.from(C.ONE_YEAR).add(timeStamp);
+        const { admin, dcnRegistry, resolverInstance } = await loadFixture(setupTldMinted);
+
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
+        expect(await dcnRegistry.expires(mockTldNamehash)).to.be.approximately(tldExpires, 10);
+
+        await dcnRegistry.connect(admin).burnTld(C.MOCK_TLD);
+
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
+        expect(await dcnRegistry.expires(mockTldNamehash)).to.equal(0);
       });
     });
   });
@@ -421,7 +477,7 @@ describe('DcnRegistry', () => {
 
     context('Error handling', () => {
       it('Should revert if caller does not have the MANAGER_ROLE', async () => {
-        const { user1, nonManager, dcnRegistry } = await loadFixture(setupBasic);
+        const { nonManager, dcnRegistry } = await loadFixture(setupBasic);
 
         await expect(
           dcnRegistry
