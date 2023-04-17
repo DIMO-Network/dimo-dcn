@@ -4,7 +4,7 @@
   "description": "Device Canonical Name",
   "main": "index.js",
   "scripts": {
-    "build": "npx hardhat clean && npx hardhat compile",
+    "build": "npx hardhat clean && npx hardhat compile && npx hardhat run scripts/abiGenerator.ts",
     "contract-sizer": "CONTRACT_SIZER=true npm run build",
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage",

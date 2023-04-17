@@ -11,7 +11,8 @@ import {
     ResolverRegistry,
     VehicleIdResolver,
     NameResolver,
-    Shared
+    Shared,
+    Multicall
 } from '../typechain-types';
 
 export async function setupBasic() {
@@ -22,12 +23,14 @@ export async function setupBasic() {
     let vehicleIdResolverInstance: VehicleIdResolver;
     let nameResolverInstance: NameResolver;
     let sharedInstance: Shared;
+    let multicallInstance: Multicall;
     [
         resolverInstance,
         vehicleIdResolverInstance,
         nameResolverInstance,
-        sharedInstance
-    ] = await initialize(deployer, 'VehicleIdResolver', 'NameResolver', 'Shared');
+        sharedInstance,
+        multicallInstance
+    ] = await initialize(deployer, 'VehicleIdResolver', 'NameResolver', 'Shared', 'Multicall');
 
     const MockDimoTokenFactory = await ethers.getContractFactory('MockDimoToken');
     const PriceManager = await ethers.getContractFactory('PriceManager');
@@ -93,7 +96,9 @@ export async function setupBasic() {
         dcnRegistry,
         resolverInstance,
         vehicleIdResolverInstance,
-        nameResolverInstance
+        nameResolverInstance,
+        sharedInstance,
+        multicallInstance
     };
 }
 
@@ -195,6 +200,8 @@ export async function setupVehicleMinted() {
 
     const VehicleIdFactory = await ethers.getContractFactory('MockVehicleId');
     const vehicleIdInstance = await upgrades.deployProxy(VehicleIdFactory, [], { initializer: false, kind: "uups" }) as MockVehicleId;
+
+    await vars.vehicleIdResolverInstance.connect(vars.admin).setVehicleIdProxyAddress(vehicleIdInstance.address);
 
     await vehicleIdInstance.connect(vars.user1).mint(C.MOCK_VEHICLE_TOKEN_ID);
 

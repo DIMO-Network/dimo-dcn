@@ -35,7 +35,8 @@ async function deployModules(
   const contractNameArgs: any[] = [
     { name: 'Shared', args: [] },
     { name: 'NameResolver', args: [] },
-    { name: 'VehicleIdResolver', args: [] }
+    { name: 'VehicleIdResolver', args: [] },
+    { name: 'Multicall', args: [] }
   ];
 
   const instances: ContractAddressesByNetwork = JSON.parse(
@@ -53,7 +54,7 @@ async function deployModules(
     `Contract ResolverRegistry deployed to ${resolverRegistryImplementation.address}`
   );
 
-  instances[C.networkName].resolvers.ResolverRegistry.address =
+  instances[C.networkName].modules.ResolverRegistry.address =
     resolverRegistryImplementation.address;
 
   for (const contractNameArg of contractNameArgs) {
@@ -69,7 +70,7 @@ async function deployModules(
       `Contract ${contractNameArg.name} deployed to ${contractImplementation.address}`
     );
 
-    instances[C.networkName].resolvers[contractNameArg.name].address =
+    instances[C.networkName].modules[contractNameArg.name].address =
       contractImplementation.address;
   }
 
@@ -94,7 +95,7 @@ async function deployContracts(
         C.DCN_REGISTRY_NFT_NAME,
         C.DCN_REGISTRY_NFT_SYMBOL,
         C.DCN_REGISTRY_NFT_BASE_URI,
-        contractAddresses[C.networkName].resolvers.ResolverRegistry.address
+        contractAddresses[C.networkName].modules.ResolverRegistry.address
       ]
     },
     {
@@ -151,7 +152,7 @@ async function deployContracts(
       C.dimoToken[C.networkName],
       instances[C.networkName].contracts.DcnRegistry.proxy,
       instances[C.networkName].contracts.PriceManager.proxy,
-      contractAddresses[C.networkName].resolvers.ResolverRegistry.address,
+      contractAddresses[C.networkName].modules.ResolverRegistry.address,
       C.foundationAddress[C.networkName]
     ],
     {
@@ -181,7 +182,7 @@ async function addModule(
 ): Promise<ContractAddressesByNetwork> {
   const resolverRegistryInstance = await ethers.getContractAt(
     'ResolverRegistry',
-    contractAddresses[C.networkName].resolvers.ResolverRegistry.address
+    contractAddresses[C.networkName].modules.ResolverRegistry.address
   ) as ResolverRegistry;
 
   const instances: ContractAddressesByNetwork = JSON.parse(
@@ -189,12 +190,12 @@ async function addModule(
   );
 
   const contractsNameImpl = Object.keys(
-    contractAddresses[C.networkName].resolvers
+    contractAddresses[C.networkName].modules
   ).map((contractName) => {
     return {
       name: contractName,
       implementation:
-        contractAddresses[C.networkName].resolvers[contractName].address
+        contractAddresses[C.networkName].modules[contractName].address
     };
   });
 
@@ -211,7 +212,7 @@ async function addModule(
         .addModule(contract.implementation, contractSelectors)
     ).wait();
 
-    instances[C.networkName].resolvers[contract.name].selectors =
+    instances[C.networkName].modules[contract.name].selectors =
       contractSelectors;
 
     console.log(`Module ${contract.name} added`);
@@ -225,11 +226,11 @@ async function addModule(
 async function setup(deployer: SignerWithAddress) {
   const vehicleIdResolverInstance = await ethers.getContractAt(
     'VehicleIdResolver',
-    contractAddresses[C.networkName].resolvers.ResolverRegistry.address
+    contractAddresses[C.networkName].modules.ResolverRegistry.address
   ) as VehicleIdResolver;
   const sharedInstance = await ethers.getContractAt(
     'Shared',
-    contractAddresses[C.networkName].resolvers.ResolverRegistry.address
+    contractAddresses[C.networkName].modules.ResolverRegistry.address
   ) as Shared;
 
   console.log('\n----- Setting vehicle ID proxy address -----');
@@ -260,7 +261,7 @@ async function grantRoles(deployer: SignerWithAddress) {
   ) as DcnRegistry;
   const resolverRegistryInstance = await ethers.getContractAt(
     'ResolverRegistry',
-    contractAddresses[C.networkName].resolvers.ResolverRegistry.address
+    contractAddresses[C.networkName].modules.ResolverRegistry.address
   ) as ResolverRegistry;
   const dcnManagerInstance = await ethers.getContractAt(
     'DcnManager',
@@ -280,6 +281,57 @@ async function grantRoles(deployer: SignerWithAddress) {
   await dcnManagerInstance.connect(deployer).grantRole(C.MINTER_ROLE, deployer.address);
 
   console.log('----- Roles granted -----\n');
+}
+
+async function upgradeContract(
+  deployer: SignerWithAddress,
+  contractName: string,
+  networkName: string,
+  forceImport?: boolean
+): Promise<ContractAddressesByNetwork> {
+  // const NftFactoryOld = await ethers.getContractFactory(
+  //   'AftermarketDeviceIdOld',
+  //   deployer
+  // );
+  const NftFactory = await ethers.getContractFactory(contractName, deployer);
+
+  const instances: ContractAddressesByNetwork = JSON.parse(
+    JSON.stringify(contractAddresses)
+  );
+
+  const oldProxyAddress = instances[networkName].contracts[contractName].proxy;
+
+  console.log('\n----- Upgrading NFT -----\n');
+
+  // if (forceImport) {
+  //   await upgrades.forceImport(oldProxyAddress, NftFactoryOld, {
+  //     kind: 'uups'
+  //   });
+  // }
+
+  console.log(await upgrades.erc1967.getImplementationAddress(oldProxyAddress));
+
+  await upgrades.validateImplementation(NftFactory, {
+    kind: 'uups'
+  });
+  const upgradedProxy = await upgrades.upgradeProxy(
+    oldProxyAddress,
+    NftFactory,
+    {
+      kind: 'uups'
+    }
+  );
+  await upgradedProxy.deployed();
+  console.log(
+    await upgrades.erc1967.getImplementationAddress(upgradedProxy.address)
+  );
+
+  console.log(`----- Contract ${contractName} upgraded -----`);
+
+  instances[networkName].contracts[contractName].implementation =
+    await upgrades.erc1967.getImplementationAddress(upgradedProxy.address);
+
+  return instances;
 }
 
 async function main() {
