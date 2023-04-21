@@ -201,19 +201,28 @@ contract DcnRegistry is
 
     /// ----- EXTERNAL VIEW FUNCTIONS ----- ///
 
-    /// @dev Returns the address of the resolver for the specified node
+    /// @notice Returns the address of the resolver for the specified node
     /// @param node The specified node
     /// @return resolver_ address of the resolver
     function resolver(bytes32 node) external view returns (address resolver_) {
-        resolver_ = records[node].resolver == address(0)
-            ? defaultResolver
-            : records[node].resolver;
+        resolver_ = _resolver(node);
     }
 
-    /// @dev Returns the expiration of a node
+    /// @notice Returns the expiration of a node
     /// @param node The specified node
     /// @return expires_ expiration of the node
     function expires(bytes32 node) external view returns (uint256 expires_) {
+        expires_ = records[node].expires;
+    }
+
+    /// @notice Returns the address of the resolver for the specified node and its expiration
+    /// @param node The specified node
+    /// @return resolver_ address of the resolver
+    /// @return expires_ expiration of the node
+    function record(
+        bytes32 node
+    ) external view returns (address resolver_, uint256 expires_) {
+        resolver_ = _resolver(node);
         expires_ = records[node].expires;
     }
 
@@ -226,7 +235,7 @@ contract DcnRegistry is
 
     /// ----- PUBLIC FUNCTIONS ----- ///
 
-    /// @dev Returns true if this contract implements the interface defined by `interfaceId`
+    /// @notice Returns true if this contract implements the interface defined by `interfaceId`
     function supportsInterface(
         bytes4 interfaceId
     )
@@ -240,7 +249,7 @@ contract DcnRegistry is
 
     /// ----- INTERNAL FUNCTIONS ----- ///
 
-    /// @notice Gets the base URI
+    /// @dev Gets the base URI
     /// @return string
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
@@ -282,6 +291,16 @@ contract DcnRegistry is
     ) internal override onlyRole(UPGRADER_ROLE) {}
 
     /// ----- PRIVATE FUNCTIONS ----- ///
+
+    /// @dev Private Returns the address of the resolver for the specified node
+    /// @dev If resolver is not set, it returns the defaultResolver
+    /// @param node The specified node
+    /// @return resolver_ address of the resolver
+    function _resolver(bytes32 node) private view returns (address resolver_) {
+        resolver_ = records[node].resolver == address(0)
+            ? defaultResolver
+            : records[node].resolver;
+    }
 
     /// @dev Private function to register a new name and mints its corresponding token
     /// @param to Token owner

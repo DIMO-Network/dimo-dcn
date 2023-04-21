@@ -51,7 +51,7 @@
         "contracts": {
             "DcnRegistry": {
                 "proxy": "0xE9F4dfE02f895DC17E2e146e578873c9095bA293",
-                "implementation": "0xDdAaDd6B78e2A7aE99237b89A92507C14f4466d6"
+                "implementation": "0x83bb71a948940C560e2637909028a9c1808558D8"
             },
             "PriceManager": {
                 "proxy": "0xB012e1c73073E87aD268844769170B4eE2d5bfb3",
@@ -115,7 +115,7 @@
         "contracts": {
             "DcnRegistry": {
                 "proxy": "0x2daeF6FF0E2B61aaBF9ADDE1aFDAfDb4f0f1E660",
-                "implementation": "0xF598A61455dC58A9140A97c2F1F1eA327A614a69"
+                "implementation": "0x50bd95bAf33158EFBC1cD81274C64452323875C3"
             },
             "PriceManager": {
                 "proxy": "0x97Fd55d91D42ea01C73fc88DAbBa89944a97FddA",
