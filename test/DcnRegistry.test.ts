@@ -647,6 +647,25 @@ describe('DcnRegistry', () => {
     // });
   });
 
+  describe('record', () => {
+    it('Should correctly return the record associated with minted node', async () => {
+      const timeStamp = await time.latest();
+      const tldExpires = ethers.BigNumber.from(C.ONE_YEAR).add(timeStamp);
+      
+      const mockNamehash = namehash(C.MOCK_LABELS);
+      const { user1, dcnManager, dcnRegistry, resolverInstance } = await loadFixture(setupTldMinted);
+
+      await dcnManager
+        .connect(user1)
+        .mint(user1.address, C.MOCK_LABELS, C.ONE_YEAR, 0);
+
+      const record = await dcnRegistry.record(mockNamehash);
+
+      expect(record.resolver_).to.equal(resolverInstance.address);
+      expect(record.expires_).to.gte(tldExpires);
+    });
+  });
+
   describe('Transferring', () => {
     it('Should revert if caller does not have the TRANSFERER_ROLE', async () => {
       const mockTldNamehash = namehash(C.MOCK_TLD);

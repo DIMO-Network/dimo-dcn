@@ -37,5 +37,8 @@
     "@openzeppelin/hardhat-upgrades": "^1.22.1",
     "@solidstate/contracts": "^0.0.52",
     "dotenv": "^16.0.3"
+  },
+  "overrides": {
+    "@solidity-parser/parser": "0.16.0"
   }
 }
