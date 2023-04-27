@@ -4,7 +4,8 @@ import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
 import '@openzeppelin/hardhat-upgrades';
 import 'hardhat-contract-sizer';
-import 'hardhat-tracer'
+import 'hardhat-tracer';
+import 'hardhat-abi-exporter';
 
 dotenv.config();
 
@@ -47,6 +48,12 @@ const config: HardhatUserConfig = {
     disambiguatePaths: false,
     runOnCompile: process.env.CONTRACT_SIZER !== undefined,
     strict: true
+  },
+  abiExporter: {
+    path: './abis',
+    runOnCompile: true,
+    only: [':DcnRegistry$'],
+    format: 'json'
   }
 };
 
