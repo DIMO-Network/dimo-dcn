@@ -35,16 +35,16 @@ describe('DcnRegistry', () => {
       it('Should mint 0 token to deployer', async () => {
         const { deployer, dcnRegistry } = await loadFixture(setupBasic);
 
-        expect(await dcnRegistry.ownerOf(ethers.BigNumber.from(C.BYTES_32_ZER0))).to.equal(deployer.address);
+        expect(await dcnRegistry.ownerOf(ethers.BigNumber.from(ethers.constants.HashZero))).to.equal(deployer.address);
       });
       it('Should register 0x00 node', async () => {
         const timeStamp = await time.latest();
-        const tldExpires = ethers.BigNumber.from(C.MAX_UINT_256).sub(timeStamp);
+        const tldExpires = ethers.BigNumber.from(ethers.constants.MaxUint256).sub(timeStamp);
         const { dcnRegistry } = await loadFixture(setupBasic);
 
-        expect(await dcnRegistry.recordExists(C.BYTES_32_ZER0)).to.be.true;
-        expect((await dcnRegistry.records(C.BYTES_32_ZER0)).resolver).to.equal(C.ZERO_ADDRESS);
-        expect((await dcnRegistry.records(C.BYTES_32_ZER0)).expires).to.gte(tldExpires);
+        expect(await dcnRegistry.recordExists(ethers.constants.HashZero)).to.be.true;
+        expect((await dcnRegistry.records(ethers.constants.HashZero)).resolver).to.equal(ethers.constants.AddressZero);
+        expect((await dcnRegistry.records(ethers.constants.HashZero)).expires).to.gte(tldExpires);
       });
     });
   });
@@ -114,7 +114,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(admin)
-            .setDefaultResolver(C.ZERO_ADDRESS)
+            .setDefaultResolver(ethers.constants.AddressZero)
         ).to.be.revertedWith('Zero address');
       });
     });
@@ -152,7 +152,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(nonManager)
-            .mintTld(user1.address, C.MOCK_TLD, C.ZERO_ADDRESS, C.ONE_YEAR)
+            .mintTld(user1.address, C.MOCK_TLD, ethers.constants.AddressZero, C.ONE_YEAR)
         ).to.be.revertedWith(
           `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
           }`
@@ -164,7 +164,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(dcnMockManager)
-            .mintTld(admin.address, '', C.ZERO_ADDRESS, C.ONE_YEAR)
+            .mintTld(admin.address, '', ethers.constants.AddressZero, C.ONE_YEAR)
         ).to.be.revertedWith('Empty label');
       });
     });
@@ -236,7 +236,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(nonManager)
-            .mint(user1.address, C.MOCK_LABELS, C.ZERO_ADDRESS, C.ONE_YEAR)
+            .mint(user1.address, C.MOCK_LABELS, ethers.constants.AddressZero, C.ONE_YEAR)
         ).to.be.revertedWith(
           `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
           }`
@@ -263,12 +263,12 @@ describe('DcnRegistry', () => {
 
         await dcnRegistry
           .connect(dcnMockManager)
-          .mintTld(user1.address, C.MOCK_TLD, C.ZERO_ADDRESS, C.ONE_YEAR);
+          .mintTld(user1.address, C.MOCK_TLD, ethers.constants.AddressZero, C.ONE_YEAR);
 
         await expect(
           dcnRegistry
             .connect(dcnMockManager)
-            .mint(user1.address, ['', C.MOCK_TLD], C.ZERO_ADDRESS, C.ONE_YEAR)
+            .mint(user1.address, ['', C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR)
         ).to.be.revertedWith('Empty label');
       });
       it('Should revert if labels is below 2', async () => {
@@ -277,7 +277,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(dcnMockManager)
-            .mint(user1.address, [C.MOCK_TLD], C.ZERO_ADDRESS, C.ONE_YEAR)
+            .mint(user1.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR)
         ).to.be.revertedWith('Labels length below 2');
       });
     });
@@ -398,7 +398,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(nonManager)
-            .claim(user1.address, mockNamehash, C.ZERO_ADDRESS, C.ONE_YEAR)
+            .claim(user1.address, mockNamehash, ethers.constants.AddressZero, C.ONE_YEAR)
         ).to.be.revertedWith(
           `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
           }`
@@ -446,11 +446,11 @@ describe('DcnRegistry', () => {
 
     context('State', () => {
       it('Should remint node to the new user', async () => {
-        const { user1, user2, dcnManager, dcnRegistry, mockDimoToken } = await loadFixture(setupVehicleMinted);
+        const { user1, user2, dcnManager, dcnRegistry, mockDimoToken, vehicleIdInstance } = await loadFixture(setupVehicleMinted);
 
         await dcnManager
           .connect(user1)
-          .mint(user1.address, C.MOCK_LABELS, C.ONE_YEAR, 0);
+          .mint(user1.address, C.MOCK_LABELS, C.ONE_YEAR, 1);
 
         await time.increase(C.ONE_YEAR + 1);
 
@@ -462,12 +462,39 @@ describe('DcnRegistry', () => {
         await mockDimoToken
           .connect(user2)
           .approve(dcnManager.address, C.ONE_MILLION);
+        await vehicleIdInstance.connect(user2).mint(2);
 
         await dcnManager
           .connect(user2)
-          .claim(user2.address, mockNamehash, C.ONE_YEAR, 0);
+          .claim(user2.address, mockNamehash, C.ONE_YEAR, 2);
 
         expect(await dcnRegistry.ownerOf(mockNamehash)).to.equal(user2.address);
+      });
+      it('Should link node to the vehicle ID of the new owner', async () => {
+        const { user1, user2, dcnManager, dcnRegistry, mockDimoToken, vehicleIdInstance, vehicleIdResolverInstance } = await loadFixture(setupVehicleMinted);
+
+        await dcnManager
+          .connect(user1)
+          .mint(user1.address, C.MOCK_LABELS, C.ONE_YEAR, 1);
+
+        await time.increase(C.ONE_YEAR + 1);
+
+        expect(await dcnRegistry.ownerOf(mockNamehash)).to.equal(user1.address);
+
+        await mockDimoToken
+          .connect(user2)
+          .mint(C.ONE_MILLION);
+        await mockDimoToken
+          .connect(user2)
+          .approve(dcnManager.address, C.ONE_MILLION);
+        await vehicleIdInstance.connect(user2).mint(2);
+
+        await dcnManager
+          .connect(user2)
+          .claim(user2.address, mockNamehash, C.ONE_YEAR, 2);
+
+        expect(await vehicleIdResolverInstance.vehicleId(mockNamehash)).to.be.equal(2);
+        expect(await vehicleIdResolverInstance.nodeByVehicleId(2)).to.be.equal(mockNamehash);
       });
     });
   });
@@ -544,7 +571,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(nonManager)
-            .setResolver(mockTldNamehash, C.ZERO_ADDRESS)
+            .setResolver(mockTldNamehash, ethers.constants.AddressZero)
         ).to.be.revertedWith(
           `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
           }`
@@ -556,7 +583,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnManager
             .connect(admin)
-            .setResolver(mockTldNamehash, C.ZERO_ADDRESS)
+            .setResolver(mockTldNamehash, ethers.constants.AddressZero)
         ).to.be.revertedWith('Node does not exist');
       });
     });
@@ -567,7 +594,7 @@ describe('DcnRegistry', () => {
 
         await dcnManager
           .connect(admin)
-          .setResolver(mockTldNamehash, C.ZERO_ADDRESS)
+          .setResolver(mockTldNamehash, ethers.constants.AddressZero)
 
         expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
       });

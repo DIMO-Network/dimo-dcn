@@ -179,7 +179,7 @@ describe('DcnManager', () => {
         await expect(
           dcnManager
             .connect(nonAdmin)
-            .setResolver(mockTldNamehash, C.ZERO_ADDRESS)
+            .setResolver(mockTldNamehash, ethers.constants.AddressZero)
         ).to.be.revertedWith(
           `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.ADMIN_ROLE
           }`
