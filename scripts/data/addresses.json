@@ -31,7 +31,7 @@
                 ]
             },
             "VehicleIdResolver": {
-                "address": "0xeBd57Eb7821EfDdC9280bB87228888D0BDD5DbcA",
+                "address": "0xcA9d25C9a59CF85210Dd255aA56c4F015c005c9C",
                 "selectors": [
                     "0x01e11675",
                     "0x1bd59757",
@@ -59,7 +59,7 @@
             },
             "DcnManager": {
                 "proxy": "0xFDAF7D6912056Ff79dcAf16051D14652c49f9957",
-                "implementation": "0x3136E99f9F5f530ef3cb370E10EbF8b1330Ae9dD"
+                "implementation": "0x2FDE841a060a55F002a6944EBD87A56B38a15fC0"
             }
         }
     },
@@ -95,7 +95,7 @@
                 ]
             },
             "VehicleIdResolver": {
-                "address": "0xd3417c54F50FAddFA1187934C2E6cDDA711B9f05",
+                "address": "0x6855EF961DB20eF279013C43624a31241fc38781",
                 "selectors": [
                     "0x01e11675",
                     "0x1bd59757",
@@ -123,7 +123,7 @@
             },
             "DcnManager": {
                 "proxy": "0xeBd57Eb7821EfDdC9280bB87228888D0BDD5DbcA",
-                "implementation": "0x4f6cDA539a63e52ee5a5e4F3D7dfC97C7C48842e"
+                "implementation": "0x607665C322c2b1DA7a3988C141C70E6C9Bb54f6c"
             }
         }
     },
