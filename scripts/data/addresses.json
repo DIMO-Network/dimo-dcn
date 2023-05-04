@@ -31,7 +31,7 @@
                 ]
             },
             "VehicleIdResolver": {
-                "address": "0xcA9d25C9a59CF85210Dd255aA56c4F015c005c9C",
+                "address": "0x2cA245b77dF599929B6B72Fb2fb8b472Ec43b68F",
                 "selectors": [
                     "0x01e11675",
                     "0x1bd59757",
@@ -95,7 +95,7 @@
                 ]
             },
             "VehicleIdResolver": {
-                "address": "0x6855EF961DB20eF279013C43624a31241fc38781",
+                "address": "0x5B9de0224cF6ddf2fa4A6110C75BfCEFf392fAb4",
                 "selectors": [
                     "0x01e11675",
                     "0x1bd59757",

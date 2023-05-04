@@ -214,5 +214,21 @@ describe('VehicleResolver', () => {
                 expect(await vehicleIdResolverInstance.nodeByVehicleId(1)).to.be.equal(ethers.constants.HashZero);
             })
         });
+
+        context('Events', () => {
+            it('Should emit VehicleIdChanged event with correct params', async () => {
+                const { user1, mockDcnRegistry, vehicleIdResolverInstance } = await loadFixture(setup);
+                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR);
+                await vehicleIdResolverInstance.connect(user1).setVehicleId(mockTldNamehash, 1);
+
+                await expect(
+                    vehicleIdResolverInstance
+                        .connect(user1)
+                        .resetVehicleId(mockTldNamehash, 1)
+                )
+                    .to.emit(vehicleIdResolverInstance, 'VehicleIdChanged')
+                    .withArgs(mockTldNamehash, 0);
+            });
+        });
     });
 });

@@ -31,46 +31,14 @@ contract VehicleIdResolver is AccessControlInternal {
     /// @param node The node to update
     /// @param vehicleId_ The vehicle ID to be set
     function setVehicleId(bytes32 node, uint256 vehicleId_) external {
-        VehicleIdStorage.Storage storage vs = VehicleIdStorage.getStorage();
-        address nodeOwner = IDcnRegistry(SharedStorage.getStorage().dcnRegistry)
-            .ownerOf(uint256(node));
-
-        require(
-            msg.sender == SharedStorage.getStorage().dcnManager ||
-                msg.sender == nodeOwner,
-            "Not authorized"
-        );
-        require(
-            nodeOwner == INFT(vs.vehicleIdProxyAddress).ownerOf(vehicleId_),
-            "Owners does not match"
-        );
-
-        vs.nodeToVehicleIds[node] = vehicleId_;
-        vs.vehicleIdToNodes[vehicleId_] = node;
-
-        emit VehicleIdChanged(node, vehicleId_);
+        _setVehicleId(node, vehicleId_, false);
     }
 
     /// @notice Resets the pair node-vehicleId to default values
     /// @param node The node to be reset
     /// @param vehicleId_ The vehicle ID to be reset
     function resetVehicleId(bytes32 node, uint256 vehicleId_) external {
-        VehicleIdStorage.Storage storage vs = VehicleIdStorage.getStorage();
-        address nodeOwner = IDcnRegistry(SharedStorage.getStorage().dcnRegistry)
-            .ownerOf(uint256(node));
-
-        require(
-            msg.sender == SharedStorage.getStorage().dcnManager ||
-                msg.sender == nodeOwner,
-            "Not authorized"
-        );
-        require(
-            nodeOwner == INFT(vs.vehicleIdProxyAddress).ownerOf(vehicleId_),
-            "Owners does not match"
-        );
-
-        vs.nodeToVehicleIds[node] = 0;
-        vs.vehicleIdToNodes[vehicleId_] = 0x00;
+        _setVehicleId(node, vehicleId_, true);
     }
 
     /// @notice Returns the vehicle ID associated with a DCN node
@@ -89,5 +57,37 @@ contract VehicleIdResolver is AccessControlInternal {
         uint256 vehicleId_
     ) external view returns (bytes32 node) {
         node = VehicleIdStorage.getStorage().vehicleIdToNodes[vehicleId_];
+    }
+
+    function _setVehicleId(
+        bytes32 node,
+        uint256 vehicleId_,
+        bool reset
+    ) private {
+        VehicleIdStorage.Storage storage vs = VehicleIdStorage.getStorage();
+        address nodeOwner = IDcnRegistry(SharedStorage.getStorage().dcnRegistry)
+            .ownerOf(uint256(node));
+
+        require(
+            msg.sender == SharedStorage.getStorage().dcnManager ||
+                msg.sender == nodeOwner,
+            "Not authorized"
+        );
+        require(
+            nodeOwner == INFT(vs.vehicleIdProxyAddress).ownerOf(vehicleId_),
+            "Owners does not match"
+        );
+
+        if (reset) {
+            vs.nodeToVehicleIds[node] = 0;
+            vs.vehicleIdToNodes[vehicleId_] = 0x0;
+
+            emit VehicleIdChanged(node, 0);
+        } else {
+            vs.nodeToVehicleIds[node] = vehicleId_;
+            vs.vehicleIdToNodes[vehicleId_] = node;
+
+            emit VehicleIdChanged(node, vehicleId_);
+        }
     }
 }
