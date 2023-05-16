@@ -52,7 +52,7 @@ const config: HardhatUserConfig = {
   abiExporter: {
     path: './abis',
     runOnCompile: true,
-    only: [':DcnRegistry$', ':DcnManager$'],
+    only: [':DcnRegistry$', ':DcnManager$', ':PriceManager$'],
     format: 'json'
   }
 };
