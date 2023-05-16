@@ -5,26 +5,6 @@
     "type": "constructor"
   },
   {
-    "inputs": [],
-    "name": "DisallowedLabel",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidArrayLength",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidCharacter",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidLength",
-    "type": "error"
-  },
-  {
     "anonymous": false,
     "inputs": [
       {
@@ -41,6 +21,19 @@
       }
     ],
     "name": "AdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newBasePrice",
+        "type": "uint256"
+      }
+    ],
+    "name": "BasePriceChanged",
     "type": "event"
   },
   {
@@ -171,67 +164,32 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "basePrice",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "node",
-        "type": "bytes32"
-      },
       {
         "internalType": "uint256",
         "name": "duration",
         "type": "uint256"
-      },
+      }
+    ],
+    "name": "getPrice",
+    "outputs": [
       {
         "internalType": "uint256",
-        "name": "vehicleId",
+        "name": "price",
         "type": "uint256"
-      }
-    ],
-    "name": "claim",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "dcnRegistry",
-    "outputs": [
-      {
-        "internalType": "contract IDcnRegistry",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "dimoToken",
-    "outputs": [
-      {
-        "internalType": "contract IDimo",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "foundation",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -301,121 +259,14 @@
   {
     "inputs": [
       {
-        "internalType": "contract IDimo",
-        "name": "dimoToken_",
-        "type": "address"
-      },
-      {
-        "internalType": "contract IDcnRegistry",
-        "name": "dcnRegistry_",
-        "type": "address"
-      },
-      {
-        "internalType": "contract IPriceManager",
-        "name": "priceManager_",
-        "type": "address"
-      },
-      {
-        "internalType": "contract IResolver",
-        "name": "resolver_",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "foundation_",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "basePrice_",
+        "type": "uint256"
       }
     ],
     "name": "initialize",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "string[]",
-        "name": "labels",
-        "type": "string[]"
-      },
-      {
-        "internalType": "uint256",
-        "name": "duration",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "vehicleId",
-        "type": "uint256"
-      }
-    ],
-    "name": "mint",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "string[]",
-        "name": "labels",
-        "type": "string[]"
-      },
-      {
-        "internalType": "uint256",
-        "name": "duration",
-        "type": "uint256"
-      }
-    ],
-    "name": "mintByAdmin",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "string",
-        "name": "label",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "duration",
-        "type": "uint256"
-      }
-    ],
-    "name": "mintTld",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "priceManager",
-    "outputs": [
-      {
-        "internalType": "contract IPriceManager",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -434,29 +285,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "node",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "uint256",
-        "name": "duration",
-        "type": "uint256"
-      }
-    ],
-    "name": "renew",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "bytes32",
         "name": "role",
         "type": "bytes32"
@@ -470,19 +298,6 @@
     "name": "renounceRole",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "resolver",
-    "outputs": [
-      {
-        "internalType": "contract IResolver",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -506,53 +321,12 @@
   {
     "inputs": [
       {
-        "internalType": "string[]",
-        "name": "labels",
-        "type": "string[]"
-      },
-      {
-        "internalType": "bool[]",
-        "name": "disallowed",
-        "type": "bool[]"
-      }
-    ],
-    "name": "setDisallowedLabels",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "node",
-        "type": "bytes32"
-      },
-      {
         "internalType": "uint256",
-        "name": "duration",
+        "name": "newBasePrice",
         "type": "uint256"
       }
     ],
-    "name": "setExpiration",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "node",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "resolver_",
-        "type": "address"
-      }
-    ],
-    "name": "setResolver",
+    "name": "setBasePrice",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -605,25 +379,6 @@
     "name": "upgradeToAndCall",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "label_",
-        "type": "string"
-      }
-    ],
-    "name": "validateLabel",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "label",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   }
 ]

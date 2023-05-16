@@ -118,7 +118,7 @@ contract DcnManager is
     ) external {
         require(labels.length == 2, "Only 2 labels");
 
-        labels[0] = _validate(labels[0]);
+        labels[0] = validateLabel(labels[0]);
 
         dimoToken.transferFrom(
             msg.sender,
@@ -203,33 +203,15 @@ contract DcnManager is
         }
     }
 
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyRole(UPGRADER_ROLE) {}
-
-    /// @dev Concatenates an array of strings in the format
-    /// ['string1','string2'] -> 'string1.string2
-    /// @param str Array of strings to be concatenated
-    function _concat(
-        string[] memory str
-    ) private pure returns (string memory output) {
-        uint256 length = str.length;
-        output = str[0];
-
-        for (uint256 i = 1; i < length; i++) {
-            output = string(abi.encodePacked(output, ".", str[i]));
-        }
-    }
-
     /// @dev Validates a label to be recorded
     /// @dev Length must be between 3 and 15 characters
     /// @dev All characters must be [A-Z][a-z][0-9]
     /// @dev All characters are converted to lowercase if needed
     /// @dev Label must not be disallowed
     /// @param label_ Label to be verified
-    function _validate(
+    function validateLabel(
         string memory label_
-    ) private view returns (string memory label) {
+    ) public view returns (string memory label) {
         bytes memory b = bytes(label_);
         uint256 labelLength = b.length;
 
@@ -255,5 +237,23 @@ contract DcnManager is
         label = string(b);
 
         if (disallowedLabels[label]) revert DisallowedLabel();
+    }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(UPGRADER_ROLE) {}
+
+    /// @dev Concatenates an array of strings in the format
+    /// ['string1','string2'] -> 'string1.string2
+    /// @param str Array of strings to be concatenated
+    function _concat(
+        string[] memory str
+    ) private pure returns (string memory output) {
+        uint256 length = str.length;
+        output = str[0];
+
+        for (uint256 i = 1; i < length; i++) {
+            output = string(abi.encodePacked(output, ".", str[i]));
+        }
     }
 }

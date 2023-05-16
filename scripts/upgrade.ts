@@ -3,7 +3,7 @@ import * as path from 'path';
 import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
-import { ResolverRegistry, DcnRegistry } from '../typechain-types';
+import { ResolverRegistry, DcnManager } from '../typechain-types';
 import { getSelectors, ContractAddressesByNetwork } from '../utils';
 import * as C from './data/deployConstants';
 import addressesJSON from './data/addresses.json';
@@ -180,7 +180,7 @@ async function upgradeContract(
   forceImport?: boolean
 ): Promise<ContractAddressesByNetwork> {
   const contractFactoryOld = await ethers.getContractFactory(
-    'DcnRegistryOld',
+    'DcnManagerOld',
     deployer
   );
   const ContractFactory = await ethers.getContractFactory(contractName, deployer);
@@ -191,7 +191,7 @@ async function upgradeContract(
 
   const oldProxyAddress = instances[networkName].contracts[contractName].proxy;
 
-  console.log('\n----- Upgrading NFT -----\n');
+  console.log(`\n----- Upgrading contract ${contractName} -----\n`);
 
   if (forceImport) {
     await upgrades.forceImport(oldProxyAddress, contractFactoryOld, {
@@ -226,6 +226,7 @@ async function upgradeContract(
 
 async function main() {
   const [deployer] = await ethers.getSigners();
+  const currentNetwork = 'polygon';
 
   // const deployer = await ethers.getImpersonatedSigner(
   //   '0x1741eC2915Ab71Fc03492715b5640133dA69420B'
@@ -236,30 +237,18 @@ async function main() {
   //   value: ethers.utils.parseEther('100')
   // });
 
-  const dcnRegistryInstance = await ethers.getContractAt(
-    'DcnRegistry',
-    contractAddresses[C.networkName].contracts.DcnRegistry.proxy
-  ) as DcnRegistry;
+  const instances = await updateModule(deployer, 'VehicleIdResolver', currentNetwork);
+  writeAddresses(instances, currentNetwork);
 
-  await dcnRegistryInstance.connect(deployer).grantRole(C.UPGRADER_ROLE, deployer.address);
+  const dcnManagerInstance = await ethers.getContractAt(
+    'DcnManager',
+    contractAddresses[currentNetwork].contracts.DcnManager.proxy
+  ) as DcnManager;
 
-  let instances = await upgradeContract(deployer, 'DcnRegistry', C.networkName);
-  writeAddresses(instances, C.networkName);
+  await dcnManagerInstance.connect(deployer).grantRole(C.UPGRADER_ROLE, deployer.address);
 
-  await dcnRegistryInstance.connect(deployer).burnTld('"dimo"');
-
-  const resolverRegistryInstance = await ethers.getContractAt(
-    'ResolverRegistry',
-    contractAddresses[C.networkName].modules.ResolverRegistry.address
-  ) as ResolverRegistry;
-
-  await resolverRegistryInstance.connect(deployer).grantRole(C.MANAGER_RESOLVER_ROLE, deployer.address);
-
-  instances = await deployModules(deployer, ['Multicall'], C.networkName);
-  writeAddresses(instances, C.networkName);
-
-  instances = await addModules(deployer, ['Multicall'], C.networkName);
-  writeAddresses(instances, C.networkName);
+  const instances2 = await upgradeContract(deployer, 'DcnManager', currentNetwork);
+  writeAddresses(instances2, currentNetwork);
 }
 
 main().catch((error) => {
