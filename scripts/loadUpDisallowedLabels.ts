@@ -7,7 +7,7 @@ import { disallowedList } from './data/disallowed';
 
 const contractAddresses: ContractAddressesByNetwork = addressesJSON;
 
-function cleanUpLabels(labels: string[]) {
+function cleanUpLabels(labels: string[]): string[] {
     return labels.map(label => {
         return label
             .toLowerCase() // To lower case
@@ -24,7 +24,7 @@ async function main() {
     ) as DcnManager;
 
     const disallowedListCleanedUp = cleanUpLabels(disallowedList);
-    const disallowed = new Array(disallowedList.length).fill(true);
+    const disallowed = new Array(disallowedListCleanedUp.length).fill(true);
 
     await dcnManagerInstance.setDisallowedLabels(disallowedListCleanedUp, disallowed);
 }
