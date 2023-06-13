@@ -138,5 +138,6 @@ export const disallowedList = [
     'AutoPi',
     'Dimo',
     'DAF',
-    'HINO'
+    'HINO',
+    'Scania'
   ];
