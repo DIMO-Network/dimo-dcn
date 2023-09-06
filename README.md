@@ -64,3 +64,9 @@ npx hardhat run scripts/abiGenerator.ts
 ```
 
 The output file will be saved in `./abis/ResolverRegistry.json`.
+
+```mermaid
+flowchart TD
+DcnManager --> DcnRegistry
+DcnManager --> ResolverRegistry
+```
