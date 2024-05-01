@@ -63,6 +63,70 @@
             }
         }
     },
+    "amoy": {
+        "modules": {
+            "ResolverRegistry": {
+                "address": "0x8E498009CaCa11ca9dD6696Bc00eEFcCd51811d5",
+                "selectors": [
+                    "0x0df5b997",
+                    "0x248a9ca3",
+                    "0x2f2ff15d",
+                    "0x91d14854",
+                    "0x9748a762",
+                    "0x8bb9c5bf",
+                    "0xd547741f",
+                    "0x06d1d2a1"
+                ]
+            },
+            "Shared": {
+                "address": "0xCFB64F73c881b2Dc384475682b9936727720d22c",
+                "selectors": [
+                    "0x56f98b37",
+                    "0xa1caf728",
+                    "0x5b6c1979",
+                    "0xf41377ca"
+                ]
+            },
+            "NameResolver": {
+                "address": "0x1fE42E74fB191826392d5f887B9D97892b474d52",
+                "selectors": [
+                    "0x691f3431",
+                    "0x77372213"
+                ]
+            },
+            "VehicleIdResolver": {
+                "address": "0x459306CcA09E7B29f393EAC8A1CF97297398dCC0",
+                "selectors": [
+                    "0x01e11675",
+                    "0x1bd59757",
+                    "0xf3cdd5c3",
+                    "0x9bfae6da",
+                    "0x24f9e9da"
+                ]
+            },
+            "Multicall": {
+                "address": "0x6b4751FD291DbDF20C565ce4Cf8Ba49D4630541a",
+                "selectors": [
+                    "0x415c2d96",
+                    "0x1c0c6e51"
+                ]
+            }
+        },
+        "contracts": {
+            "DcnRegistry": {
+                "proxy": "0x374350Ab806E06217e84a0238150E98788cd26ab",
+                "implementation": "0x95b78E4e4a0DCCDb4367aB22d9F7f97244c43e96"
+            },
+            "PriceManager": {
+                "proxy": "0x07290D02F11F707DA3Ad9bE95e4bE63BbFFC59c3",
+                "implementation": "0x5A5BB56159E2B0bfAB10201e51cDc3ED78dD9940"
+            },
+            "DcnManager": {
+                "proxy": "0x0c96a406e4883Ce60EFAF704aD38b381B34474d2",
+                "implementation": "0x916bb6552c5561B7c81CE1cd03d8A6cBCd49Eeac"
+            }
+        }
+    },
     "mumbai": {
         "modules": {
             "ResolverRegistry": {

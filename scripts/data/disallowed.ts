@@ -139,5 +139,8 @@ export const disallowedList = [
     'Dimo',
     'DAF',
     'HINO',
-    'Scania'
+    'Scania',
+    'Chery',
+    'Hashdog',
+    'International'
   ];

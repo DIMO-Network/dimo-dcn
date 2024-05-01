@@ -1,11 +1,11 @@
 import { ethers, network } from 'hardhat';
 
 import { DcnManager } from '../typechain-types';
-import { ContractAddressesByNetwork } from '../utils';
+import { AddressesByNetwork } from '../utils';
 import addressesJSON from './data/addresses.json';
 import { disallowedList } from './data/disallowed';
 
-const contractAddresses: ContractAddressesByNetwork = addressesJSON;
+const contractAddresses: AddressesByNetwork = addressesJSON;
 
 function cleanUpLabels(labels: string[]): string[] {
     return labels.map(label => {
