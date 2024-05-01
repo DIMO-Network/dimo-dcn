@@ -1,4 +1,4 @@
-export interface ContractAddressesByNetwork {
+export interface AddressesByNetwork {
     [index: string]: {
         modules: {
             [index: string]: {

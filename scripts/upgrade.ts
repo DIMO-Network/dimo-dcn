@@ -4,20 +4,23 @@ import { ethers, upgrades } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 import { ResolverRegistry, DcnManager } from '../typechain-types';
-import { getSelectors, ContractAddressesByNetwork } from '../utils';
+import { getSelectors, AddressesByNetwork } from '../utils';
 import * as C from './data/deployConstants';
-import addressesJSON from './data/addresses.json';
 
-const contractAddresses: ContractAddressesByNetwork = addressesJSON;
+function getAddresses(): AddressesByNetwork {
+  return JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, 'data', 'addresses.json'), 'utf8'),
+  );
+}
 
 // eslint-disable-next-line no-unused-vars
 function writeAddresses(
-  addresses: ContractAddressesByNetwork,
+  addresses: AddressesByNetwork,
   networkName: string
 ) {
   console.log('\n----- Writing addresses to file -----');
 
-  const currentAddresses: ContractAddressesByNetwork = contractAddresses;
+  const currentAddresses: AddressesByNetwork = addresses;
   currentAddresses[networkName] = addresses[networkName];
 
   fs.writeFileSync(
@@ -33,12 +36,10 @@ async function deployModules(
   deployer: SignerWithAddress,
   contractNames: string[],
   networkName: string
-): Promise<ContractAddressesByNetwork> {
+): Promise<AddressesByNetwork> {
   console.log('\n----- Deploying contracts -----\n');
 
-  const instances: ContractAddressesByNetwork = JSON.parse(
-    JSON.stringify(contractAddresses)
-  );
+  const instances: AddressesByNetwork = getAddresses();
 
   for (const contractName of contractNames) {
     const ContractFactory = await ethers.getContractFactory(contractName);
@@ -69,23 +70,21 @@ async function addModules(
   deployer: SignerWithAddress,
   contractNames: string[],
   networkName: string
-): Promise<ContractAddressesByNetwork> {
+): Promise<AddressesByNetwork> {
+  const instances: AddressesByNetwork = getAddresses();
+
   const resolverRegistryInstance = await ethers.getContractAt(
     'ResolverRegistry',
-    contractAddresses[C.networkName].modules.ResolverRegistry.address
+    instances[C.networkName].modules.ResolverRegistry.address
   ) as ResolverRegistry;
 
-  const instances: ContractAddressesByNetwork = JSON.parse(
-    JSON.stringify(contractAddresses)
-  );
-
-  const contractsNameImpl = Object.keys(contractAddresses[networkName].modules)
+  const contractsNameImpl = Object.keys(instances[networkName].modules)
     .filter((contractName) => contractNames.includes(contractName))
     .map((contractName) => {
       return {
         name: contractName,
         implementation:
-          contractAddresses[networkName].modules[contractName].address
+          instances[networkName].modules[contractName].address
       };
     });
 
@@ -117,15 +116,13 @@ async function updateModule(
   deployer: SignerWithAddress,
   contractName: string,
   networkName: string
-): Promise<ContractAddressesByNetwork> {
+): Promise<AddressesByNetwork> {
+  const instances: AddressesByNetwork = getAddresses();
+
   const resolverRegistryInstance = await ethers.getContractAt(
     'ResolverRegistry',
-    contractAddresses[C.networkName].modules.ResolverRegistry.address
+    instances[C.networkName].modules.ResolverRegistry.address
   ) as ResolverRegistry;
-
-  const instances: ContractAddressesByNetwork = JSON.parse(
-    JSON.stringify(contractAddresses)
-  );
 
   const contractAddressOld =
     instances[networkName].modules[contractName].address;
@@ -178,22 +175,20 @@ async function upgradeContract(
   contractName: string,
   networkName: string,
   forceImport?: boolean
-): Promise<ContractAddressesByNetwork> {
-  const contractFactoryOld = await ethers.getContractFactory(
-    'DcnManagerOld',
-    deployer
-  );
+): Promise<AddressesByNetwork> {
+  const instances: AddressesByNetwork = getAddresses();
+
   const ContractFactory = await ethers.getContractFactory(contractName, deployer);
-
-  const instances: ContractAddressesByNetwork = JSON.parse(
-    JSON.stringify(contractAddresses)
-  );
-
   const oldProxyAddress = instances[networkName].contracts[contractName].proxy;
 
   console.log(`\n----- Upgrading contract ${contractName} -----\n`);
 
   if (forceImport) {
+    const contractFactoryOld = await ethers.getContractFactory(
+      `${contractName}_old`,
+      deployer
+    );
+
     await upgrades.forceImport(oldProxyAddress, contractFactoryOld, {
       kind: 'uups'
     });
@@ -237,12 +232,14 @@ async function main() {
   //   value: ethers.utils.parseEther('100')
   // });
 
-  const instances = await updateModule(deployer, 'VehicleIdResolver', currentNetwork);
-  writeAddresses(instances, currentNetwork);
+  const instances: AddressesByNetwork = getAddresses();
+
+  const instances1 = await updateModule(deployer, 'VehicleIdResolver', currentNetwork);
+  writeAddresses(instances1, currentNetwork);
 
   const dcnManagerInstance = await ethers.getContractAt(
     'DcnManager',
-    contractAddresses[currentNetwork].contracts.DcnManager.proxy
+    instances[currentNetwork].contracts.DcnManager.proxy
   ) as DcnManager;
 
   await dcnManagerInstance.connect(deployer).grantRole(C.UPGRADER_ROLE, deployer.address);
