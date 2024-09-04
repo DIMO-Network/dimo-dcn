@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ethers, upgrades } from 'hardhat';
+import { ethers, upgrades, network } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
-import { ResolverRegistry, DcnManager } from '../typechain-types';
+import { ResolverRegistry } from '../typechain-types';
 import { getSelectors, AddressesByNetwork } from '../utils';
 import * as C from './data/deployConstants';
 
@@ -185,7 +185,7 @@ async function upgradeContract(
 
   if (forceImport) {
     const contractFactoryOld = await ethers.getContractFactory(
-      `${contractName}_old`,
+      `${contractName}Old`,
       deployer
     );
 
@@ -193,8 +193,6 @@ async function upgradeContract(
       kind: 'uups'
     });
   }
-
-  console.log(await upgrades.erc1967.getImplementationAddress(oldProxyAddress));
 
   await upgrades.validateImplementation(ContractFactory, {
     kind: 'uups'
@@ -207,11 +205,8 @@ async function upgradeContract(
     }
   );
   await upgradedProxy.deployed();
-  console.log(
-    await upgrades.erc1967.getImplementationAddress(upgradedProxy.address)
-  );
 
-  console.log(`----- Contract ${contractName} upgraded -----`);
+  console.log(`----- Contract ${contractName} upgraded to ${await upgrades.erc1967.getImplementationAddress(upgradedProxy.address)} -----`);
 
   instances[networkName].contracts[contractName].implementation =
     await upgrades.erc1967.getImplementationAddress(upgradedProxy.address);
@@ -220,29 +215,24 @@ async function upgradeContract(
 }
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
-  const currentNetwork = 'polygon';
+  let [deployer, user1] = await ethers.getSigners();
+  const currentNetwork = 'amoy';
 
-  // const deployer = await ethers.getImpersonatedSigner(
-  //   '0x1741eC2915Ab71Fc03492715b5640133dA69420B'
-  // );
+  if (network.name === 'localhost') {
+    // 0x1741eC2915Ab71Fc03492715b5640133dA69420B Deployer
+    // 0x8E58b98d569B0679713273c5105499C249e9bC84 Amoy
+    deployer = await ethers.getImpersonatedSigner(
+      '0x8E58b98d569B0679713273c5105499C249e9bC84'
+    );
 
-  // await user1.sendTransaction({
-  //   to: deployer.address,
-  //   value: ethers.utils.parseEther('100')
-  // });
-
-  const instances: AddressesByNetwork = getAddresses();
+    await user1.sendTransaction({
+      to: deployer.address,
+      value: ethers.utils.parseEther('100')
+    });
+  }
 
   const instances1 = await updateModule(deployer, 'VehicleIdResolver', currentNetwork);
   writeAddresses(instances1, currentNetwork);
-
-  const dcnManagerInstance = await ethers.getContractAt(
-    'DcnManager',
-    instances[currentNetwork].contracts.DcnManager.proxy
-  ) as DcnManager;
-
-  await dcnManagerInstance.connect(deployer).grantRole(C.UPGRADER_ROLE, deployer.address);
 
   const instances2 = await upgradeContract(deployer, 'DcnManager', currentNetwork);
   writeAddresses(instances2, currentNetwork);
