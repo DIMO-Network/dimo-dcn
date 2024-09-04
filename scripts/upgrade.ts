@@ -216,13 +216,15 @@ async function upgradeContract(
 
 async function main() {
   let [deployer, user1] = await ethers.getSigners();
-  const currentNetwork = 'amoy';
+  let currentNetwork = network.name;
 
-  if (network.name === 'localhost') {
+  if (currentNetwork === 'localhost') {
+    currentNetwork = 'polygon';
+
     // 0x1741eC2915Ab71Fc03492715b5640133dA69420B Deployer
     // 0x8E58b98d569B0679713273c5105499C249e9bC84 Amoy
     deployer = await ethers.getImpersonatedSigner(
-      '0x8E58b98d569B0679713273c5105499C249e9bC84'
+      '0x1741eC2915Ab71Fc03492715b5640133dA69420B'
     );
 
     await user1.sendTransaction({
