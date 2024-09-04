@@ -218,17 +218,18 @@ contract DcnManager is
         if (labelLength < 3) revert InvalidLength();
         if (labelLength > 15) revert InvalidLength();
 
-        bytes1 bLetter;
+        bytes1 bChar;
         for (uint256 i = 0; i < labelLength; i++) {
-            bLetter = b[i];
+            bChar = b[i];
 
             // A-Z
-            if (bLetter > 0x40 && bLetter < 0x5B) {
+            if (bChar > 0x40 && bChar < 0x5B) {
                 // To lowercase
-                b[i] = bLetter | 0x20;
+                b[i] = bChar | 0x20;
             } else if (
-                !(bLetter > 0x2F && bLetter < 0x3A) && // 9-0
-                !(bLetter > 0x60 && bLetter < 0x7B) // a-z
+                !(bChar > 0x2F && bChar < 0x3A) && // 9-0
+                !(bChar > 0x60 && bChar < 0x7B) && // a-z
+                !(bChar == 0x5F) // _
             ) {
                 revert InvalidCharacter();
             }

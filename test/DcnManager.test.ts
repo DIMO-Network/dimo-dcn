@@ -154,6 +154,18 @@ describe('DcnManager', () => {
     });
 
     context('State', () => {
+      it('Should mint a name with all allowed characters', async () => {
+        const { user1, dcnManager, dcnRegistry } = await loadFixture(setupTldMinted);
+
+        await dcnManager
+          .connect(user1)
+          .mint(user1.address, C.MOCK_LABELS, C.ONE_YEAR, 0);
+
+        const latestBlock = await time.latestBlock();
+        const newNode = (await dcnRegistry.queryFilter(dcnRegistry.filters.NewNode(), latestBlock))[0].args.node;
+
+        expect(newNode).to.be.equal(namehash(C.MOCK_LABELS));
+      });
       it('Should convert uppercase to lowercase', async () => {
         const { user1, dcnManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
