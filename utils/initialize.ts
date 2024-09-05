@@ -1,12 +1,12 @@
 import { Wallet } from 'ethers';
 import { ethers } from 'hardhat';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 
 import { getSelectors } from '.';
 import { ResolverRegistry } from '../typechain-types';
 
 export async function initialize(
-    deployer: Wallet | SignerWithAddress,
+    deployer: Wallet | HardhatEthersSigner,
     ...contracts: string[]
 ): Promise<any[]> {
     const instances: any[] = [];
@@ -16,18 +16,17 @@ export async function initialize(
     const resolverImplementation = await ResolverFactory.connect(
         deployer
     ).deploy();
-    await resolverImplementation.deployed();
 
     const resolver = await ethers.getContractAt(
         'ResolverRegistry',
-        resolverImplementation.address
-    ) as ResolverRegistry;
+        await resolverImplementation.getAddress()
+    ) as unknown as ResolverRegistry;
 
     const contractSelectors = getSelectors(ResolverFactory.interface);
 
     await resolver
         .connect(deployer)
-        .addModule(resolverImplementation.address, contractSelectors);
+        .addModule(await resolverImplementation.getAddress(), contractSelectors);
 
     instances.push(resolver);
 
@@ -36,16 +35,15 @@ export async function initialize(
         const contractImplementation = await ContractFactory.connect(
             deployer
         ).deploy();
-        await contractImplementation.deployed();
 
         const contractSelectors = getSelectors(ContractFactory.interface);
 
         await resolver
             .connect(deployer)
-            .addModule(contractImplementation.address, contractSelectors);
+            .addModule(await contractImplementation.getAddress(), contractSelectors);
 
         instances.push(
-            await ethers.getContractAt(contractName, resolver.address)
+            await ethers.getContractAt(contractName, await resolver.getAddress())
         );
     }
 

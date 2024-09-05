@@ -25,7 +25,7 @@ describe('DcnRegistry', () => {
       it('Should correctly set the default resolver', async () => {
         const { dcnRegistry, resolverInstance } = await loadFixture(setupBasic);
 
-        expect(await dcnRegistry.defaultResolver()).to.equal(resolverInstance.address);
+        expect(await dcnRegistry.defaultResolver()).to.equal(await resolverInstance.getAddress());
       });
       it('Should correctly grant DEFAULT_ADMIN_ROLE to deployer', async () => {
         const { deployer, dcnRegistry } = await loadFixture(setupBasic);
@@ -35,16 +35,16 @@ describe('DcnRegistry', () => {
       it('Should mint 0 token to deployer', async () => {
         const { deployer, dcnRegistry } = await loadFixture(setupBasic);
 
-        expect(await dcnRegistry.ownerOf(ethers.BigNumber.from(ethers.constants.HashZero))).to.equal(deployer.address);
+        expect(await dcnRegistry.ownerOf(BigInt(ethers.ZeroHash))).to.equal(deployer.address);
       });
       it('Should register 0x00 node', async () => {
         const timeStamp = await time.latest();
-        const tldExpires = ethers.BigNumber.from(ethers.constants.MaxUint256).sub(timeStamp);
+        const tldExpires = BigInt(ethers.MaxUint256) - BigInt(timeStamp);
         const { dcnRegistry } = await loadFixture(setupBasic);
 
-        expect(await dcnRegistry.recordExists(ethers.constants.HashZero)).to.be.true;
-        expect((await dcnRegistry.records(ethers.constants.HashZero)).resolver).to.equal(ethers.constants.AddressZero);
-        expect((await dcnRegistry.records(ethers.constants.HashZero)).expires).to.gte(tldExpires);
+        expect(await dcnRegistry.recordExists(ethers.ZeroHash)).to.be.true;
+        expect((await dcnRegistry.records(ethers.ZeroHash)).resolver).to.equal(ethers.ZeroAddress);
+        expect((await dcnRegistry.records(ethers.ZeroHash)).expires).to.gte(tldExpires);
       });
     });
   });
@@ -114,7 +114,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(admin)
-            .setDefaultResolver(ethers.constants.AddressZero)
+            .setDefaultResolver(ethers.ZeroAddress)
         ).to.be.revertedWith('Zero address');
       });
     });
@@ -152,7 +152,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(nonManager)
-            .mintTld(user1.address, C.MOCK_TLD, ethers.constants.AddressZero, C.ONE_YEAR)
+            .mintTld(user1.address, C.MOCK_TLD, ethers.ZeroAddress, C.ONE_YEAR)
         ).to.be.revertedWith(
           `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
           }`
@@ -164,7 +164,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(dcnMockManager)
-            .mintTld(admin.address, '', ethers.constants.AddressZero, C.ONE_YEAR)
+            .mintTld(admin.address, '', ethers.ZeroAddress, C.ONE_YEAR)
         ).to.be.revertedWith('Empty label');
       });
     });
@@ -173,7 +173,7 @@ describe('DcnRegistry', () => {
       const mockTldNamehash = namehash(C.MOCK_TLD);
 
       it('Should mint token to the specified owner', async () => {
-        const tokenId = ethers.BigNumber.from(mockTldNamehash).toString();
+        const tokenId = BigInt(mockTldNamehash).toString();
         const { admin, dcnManager, dcnRegistry } = await loadFixture(setupBasic);
 
         await dcnManager
@@ -189,11 +189,11 @@ describe('DcnRegistry', () => {
           .connect(admin)
           .mintTld(admin.address, C.MOCK_TLD, C.ONE_YEAR);
 
-        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(await resolverInstance.getAddress());
       });
       it('Should register expiration', async () => {
         const timeStamp = await time.latest();
-        const tldExpires = ethers.BigNumber.from(C.ONE_YEAR).add(timeStamp);
+        const tldExpires = BigInt(C.ONE_YEAR) + BigInt(timeStamp);
         const { admin, dcnManager, dcnRegistry } = await loadFixture(setupBasic);
 
         await dcnManager
@@ -209,7 +209,7 @@ describe('DcnRegistry', () => {
     //     const { admin, dcnManager, dcnRegistry } = await loadFixture(setupBasic);
     //     const mockTldNamehash = namehash(C.MOCK_TLD);
     //     const timeStamp = await time.latest();
-    //     const tldExpires = ethers.BigNumber.from(C.ONE_YEAR).add(timeStamp);
+    //     const tldExpires = BigInt(C.ONE_YEAR) + BigInt(timeStamp);
     //     console.log(mockTldNamehash)
 
 
@@ -236,7 +236,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(nonManager)
-            .mint(user1.address, C.MOCK_LABELS, ethers.constants.AddressZero, C.ONE_YEAR)
+            .mint(user1.address, C.MOCK_LABELS, ethers.ZeroAddress, C.ONE_YEAR)
         ).to.be.revertedWith(
           `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
           }`
@@ -250,7 +250,7 @@ describe('DcnRegistry', () => {
           .mint(C.ONE_MILLION);
         await mockDimoToken
           .connect(user1)
-          .approve(dcnManager.address, C.ONE_MILLION);
+          .approve(await dcnManager.getAddress(), C.ONE_MILLION);
 
         await expect(
           dcnManager
@@ -263,12 +263,12 @@ describe('DcnRegistry', () => {
 
         await dcnRegistry
           .connect(dcnMockManager)
-          .mintTld(user1.address, C.MOCK_TLD, ethers.constants.AddressZero, C.ONE_YEAR);
+          .mintTld(user1.address, C.MOCK_TLD, ethers.ZeroAddress, C.ONE_YEAR);
 
         await expect(
           dcnRegistry
             .connect(dcnMockManager)
-            .mint(user1.address, ['', C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR)
+            .mint(user1.address, ['', C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR)
         ).to.be.revertedWith('Empty label');
       });
       it('Should revert if labels is below 2', async () => {
@@ -277,14 +277,14 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(dcnMockManager)
-            .mint(user1.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR)
+            .mint(user1.address, [C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR)
         ).to.be.revertedWith('Labels length below 2');
       });
     });
 
     context('State', () => {
       it('Should mint token to the specified owner', async () => {
-        const tokenId = ethers.BigNumber.from(mockNamehash).toString();
+        const tokenId = BigInt(mockNamehash).toString();
         const { user1, dcnManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
         await dcnManager
@@ -300,11 +300,11 @@ describe('DcnRegistry', () => {
           .connect(user1)
           .mint(user1.address, C.MOCK_LABELS, C.ONE_YEAR, 0);
 
-        expect(await dcnRegistry.resolver(mockNamehash)).to.equal(resolverInstance.address);
+        expect(await dcnRegistry.resolver(mockNamehash)).to.equal(await resolverInstance.getAddress());
       });
       it('Should register expiration', async () => {
         const timeStamp = await time.latest();
-        const tldExpires = ethers.BigNumber.from(C.ONE_YEAR).add(timeStamp);
+        const tldExpires = BigInt(C.ONE_YEAR) + BigInt(timeStamp);
         const { user1, dcnManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
         await dcnManager
@@ -318,7 +318,7 @@ describe('DcnRegistry', () => {
     context('Events', () => {
       it('Should emit NewExpiration event with correct params', async () => {
         const timeStamp = await time.latest();
-        const tldExpires = ethers.BigNumber.from(C.ONE_YEAR).add(timeStamp);
+        const tldExpires = BigInt(C.ONE_YEAR) + BigInt(timeStamp);
         const { user1, dcnManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
         await expect(
@@ -361,7 +361,7 @@ describe('DcnRegistry', () => {
 
     context('State', () => {
       it('Should successfully burn the token', async () => {
-        const tokenId = ethers.BigNumber.from(mockTldNamehash).toString();
+        const tokenId = BigInt(mockTldNamehash).toString();
         const { admin, dcnRegistry } = await loadFixture(setupTldMinted);
 
         expect(await dcnRegistry.ownerOf(tokenId)).to.equal(admin.address);
@@ -374,15 +374,15 @@ describe('DcnRegistry', () => {
       });
       it('Should reset resolver and expires of the node', async () => {
         const timeStamp = await time.latest();
-        const tldExpires = ethers.BigNumber.from(C.ONE_YEAR).add(timeStamp);
+        const tldExpires = BigInt(C.ONE_YEAR) + BigInt(timeStamp);
         const { admin, dcnRegistry, resolverInstance } = await loadFixture(setupTldMinted);
 
-        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(await resolverInstance.getAddress());
         expect(await dcnRegistry.expires(mockTldNamehash)).to.be.approximately(tldExpires, 10);
 
         await dcnRegistry.connect(admin).burnTld(C.MOCK_TLD);
 
-        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(await resolverInstance.getAddress());
         expect(await dcnRegistry.expires(mockTldNamehash)).to.equal(0);
       });
     });
@@ -398,7 +398,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(nonManager)
-            .claim(user1.address, mockNamehash, ethers.constants.AddressZero, C.ONE_YEAR)
+            .claim(user1.address, mockNamehash, ethers.ZeroAddress, C.ONE_YEAR)
         ).to.be.revertedWith(
           `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
           }`
@@ -434,7 +434,7 @@ describe('DcnRegistry', () => {
           .mint(C.ONE_MILLION);
         await mockDimoToken
           .connect(user2)
-          .approve(dcnManager.address, C.ONE_MILLION);
+          .approve(await dcnManager.getAddress(), C.ONE_MILLION);
 
         await expect(
           dcnManager
@@ -461,7 +461,7 @@ describe('DcnRegistry', () => {
           .mint(C.ONE_MILLION);
         await mockDimoToken
           .connect(user2)
-          .approve(dcnManager.address, C.ONE_MILLION);
+          .approve(await dcnManager.getAddress(), C.ONE_MILLION);
         await vehicleIdInstance.connect(user2).mint(2);
 
         await dcnManager
@@ -486,7 +486,7 @@ describe('DcnRegistry', () => {
           .mint(C.ONE_MILLION);
         await mockDimoToken
           .connect(user2)
-          .approve(dcnManager.address, C.ONE_MILLION);
+          .approve(await dcnManager.getAddress(), C.ONE_MILLION);
         await vehicleIdInstance.connect(user2).mint(2);
 
         await dcnManager
@@ -535,7 +535,7 @@ describe('DcnRegistry', () => {
           .renew(user1.address, mockNamehash, C.ONE_YEAR);
 
         expect(await dcnRegistry.expires(mockNamehash))
-          .to.be.approximately(oldExpiration.add(C.ONE_YEAR), 5);
+          .to.be.approximately(oldExpiration + BigInt(C.ONE_YEAR), 5);
       });
       it('Should set expiration if token is expired, but not claimed by another user', async () => {
         const { user1, dcnManager, dcnRegistry } = await loadFixture(setupVehicleMinted);
@@ -571,7 +571,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnRegistry
             .connect(nonManager)
-            .setResolver(mockTldNamehash, ethers.constants.AddressZero)
+            .setResolver(mockTldNamehash, ethers.ZeroAddress)
         ).to.be.revertedWith(
           `AccessControl: account ${nonManager.address.toLowerCase()} is missing role ${C.MANAGER_ROLE
           }`
@@ -583,7 +583,7 @@ describe('DcnRegistry', () => {
         await expect(
           dcnManager
             .connect(admin)
-            .setResolver(mockTldNamehash, ethers.constants.AddressZero)
+            .setResolver(mockTldNamehash, ethers.ZeroAddress)
         ).to.be.revertedWith('Node does not exist');
       });
     });
@@ -594,9 +594,9 @@ describe('DcnRegistry', () => {
 
         await dcnManager
           .connect(admin)
-          .setResolver(mockTldNamehash, ethers.constants.AddressZero)
+          .setResolver(mockTldNamehash, ethers.ZeroAddress)
 
-        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(resolverInstance.address);
+        expect(await dcnRegistry.resolver(mockTldNamehash)).to.equal(await resolverInstance.getAddress());
       });
     });
 
@@ -646,7 +646,7 @@ describe('DcnRegistry', () => {
     context('State', () => {
       it('Should register expiration', async () => {
         const timeStamp = await time.latest();
-        const tldExpires2 = ethers.BigNumber.from(C.TWO_YEARS).add(timeStamp);
+        const tldExpires2 = BigInt(C.TWO_YEARS) + BigInt(timeStamp);
         const { admin, dcnManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
         await dcnManager
@@ -677,7 +677,7 @@ describe('DcnRegistry', () => {
   describe('record', () => {
     it('Should correctly return the record associated with minted node', async () => {
       const timeStamp = await time.latest();
-      const tldExpires = ethers.BigNumber.from(C.ONE_YEAR).add(timeStamp);
+      const tldExpires = BigInt(C.ONE_YEAR) + BigInt(timeStamp);
       
       const mockNamehash = namehash(C.MOCK_LABELS);
       const { user1, dcnManager, dcnRegistry, resolverInstance } = await loadFixture(setupTldMinted);
@@ -688,7 +688,7 @@ describe('DcnRegistry', () => {
 
       const record = await dcnRegistry.record(mockNamehash);
 
-      expect(record.resolver_).to.equal(resolverInstance.address);
+      expect(record.resolver_).to.equal(await resolverInstance.getAddress());
       expect(record.expires_).to.gte(tldExpires);
     });
   });
@@ -696,7 +696,7 @@ describe('DcnRegistry', () => {
   describe('Transferring', () => {
     it('Should revert if caller does not have the TRANSFERER_ROLE', async () => {
       const mockTldNamehash = namehash(C.MOCK_TLD);
-      const tokenId = ethers.BigNumber.from(mockTldNamehash).toString();
+      const tokenId = BigInt(mockTldNamehash).toString();
       const { admin, user1, dcnManager, dcnRegistry } = await loadFixture(setupBasic);
 
       await dcnManager

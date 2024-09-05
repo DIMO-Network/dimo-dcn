@@ -59,7 +59,7 @@
             },
             "DcnManager": {
                 "proxy": "0xFDAF7D6912056Ff79dcAf16051D14652c49f9957",
-                "implementation": "0x2FDE841a060a55F002a6944EBD87A56B38a15fC0"
+                "implementation": "0xD8d5161414CbB586F64BF06109Bb8af695e1e4Ef"
             }
         }
     },
@@ -123,7 +123,7 @@
             },
             "DcnManager": {
                 "proxy": "0x0c96a406e4883Ce60EFAF704aD38b381B34474d2",
-                "implementation": "0x916bb6552c5561B7c81CE1cd03d8A6cBCd49Eeac"
+                "implementation": "0x7Ee4D8Bc5a16E556AD41753D31B55cb918E083aD"
             }
         }
     },

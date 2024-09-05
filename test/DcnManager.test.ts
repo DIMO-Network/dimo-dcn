@@ -10,7 +10,7 @@ describe('DcnManager', () => {
       it('Should correctly set the DCN Registry address', async () => {
         const { dcnManager, dcnRegistry } = await loadFixture(setupBasic);
 
-        expect(await dcnManager.dcnRegistry()).to.equal(dcnRegistry.address);
+        expect(await dcnManager.dcnRegistry()).to.equal(await dcnRegistry.getAddress());
       });
       it('Should correctly grant DEFAULT_ADMIN_ROLE to deployer', async () => {
         const { deployer, dcnManager } = await loadFixture(setupBasic);
@@ -84,7 +84,7 @@ describe('DcnManager', () => {
     context('State', () => {
       it('Should mint disallowed label by an admin', async () => {
         const mockNamehash = namehash([C.MOCK_DISALLOWED_LABEL_1, C.MOCK_TLD]);
-        const tokenId = ethers.BigNumber.from(mockNamehash).toString();
+        const tokenId = BigInt(mockNamehash).toString();
         const { admin, user1, dcnManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
         await dcnManager
@@ -154,6 +154,18 @@ describe('DcnManager', () => {
     });
 
     context('State', () => {
+      it('Should mint a name with all allowed characters', async () => {
+        const { user1, dcnManager, dcnRegistry } = await loadFixture(setupTldMinted);
+
+        await dcnManager
+          .connect(user1)
+          .mint(user1.address, C.MOCK_LABELS, C.ONE_YEAR, 0);
+
+        const latestBlock = await time.latestBlock();
+        const newNode = (await dcnRegistry.queryFilter(dcnRegistry.filters.NewNode(), latestBlock))[0].args.node;
+
+        expect(newNode).to.be.equal(namehash(C.MOCK_LABELS));
+      });
       it('Should convert uppercase to lowercase', async () => {
         const { user1, dcnManager, dcnRegistry } = await loadFixture(setupTldMinted);
 
@@ -179,7 +191,7 @@ describe('DcnManager', () => {
         await expect(
           dcnManager
             .connect(nonAdmin)
-            .setResolver(mockTldNamehash, ethers.constants.AddressZero)
+            .setResolver(mockTldNamehash, ethers.ZeroAddress)
         ).to.be.revertedWith(
           `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.ADMIN_ROLE
           }`

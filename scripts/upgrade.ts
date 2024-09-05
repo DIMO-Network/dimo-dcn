@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ethers, upgrades } from 'hardhat';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ethers, upgrades, network } from 'hardhat';
+import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 
-import { ResolverRegistry, DcnManager } from '../typechain-types';
+import { ResolverRegistry } from '../typechain-types';
 import { getSelectors, AddressesByNetwork } from '../utils';
 import * as C from './data/deployConstants';
 
@@ -33,7 +33,7 @@ function writeAddresses(
 
 // eslint-disable-next-line no-unused-vars
 async function deployModules(
-  deployer: SignerWithAddress,
+  deployer: HardhatEthersSigner,
   contractNames: string[],
   networkName: string
 ): Promise<AddressesByNetwork> {
@@ -46,7 +46,6 @@ async function deployModules(
     const contractImplementation = await ContractFactory.connect(
       deployer
     ).deploy();
-    await contractImplementation.deployed();
 
     const contractSelectorsNew = getSelectors(ContractFactory.interface);
 
@@ -55,7 +54,7 @@ async function deployModules(
     );
 
     instances[networkName].modules[contractName].address =
-      contractImplementation.address;
+      await contractImplementation.getAddress();
     instances[networkName].modules[contractName].selectors =
       contractSelectorsNew;
   }
@@ -67,7 +66,7 @@ async function deployModules(
 
 // eslint-disable-next-line no-unused-vars
 async function addModules(
-  deployer: SignerWithAddress,
+  deployer: HardhatEthersSigner,
   contractNames: string[],
   networkName: string
 ): Promise<AddressesByNetwork> {
@@ -76,7 +75,7 @@ async function addModules(
   const resolverRegistryInstance = await ethers.getContractAt(
     'ResolverRegistry',
     instances[C.networkName].modules.ResolverRegistry.address
-  ) as ResolverRegistry;
+  ) as unknown as ResolverRegistry;
 
   const contractsNameImpl = Object.keys(instances[networkName].modules)
     .filter((contractName) => contractNames.includes(contractName))
@@ -113,16 +112,16 @@ async function addModules(
 
 // eslint-disable-next-line no-unused-vars
 async function updateModule(
-  deployer: SignerWithAddress,
+  deployer: HardhatEthersSigner,
   contractName: string,
   networkName: string
 ): Promise<AddressesByNetwork> {
-  const instances: AddressesByNetwork = getAddresses();
+  const instances = getAddresses();
 
   const resolverRegistryInstance = await ethers.getContractAt(
     'ResolverRegistry',
     instances[C.networkName].modules.ResolverRegistry.address
-  ) as ResolverRegistry;
+  ) as unknown as ResolverRegistry;
 
   const contractAddressOld =
     instances[networkName].modules[contractName].address;
@@ -135,7 +134,6 @@ async function updateModule(
   const contractImplementation = await ContractFactory.connect(
     deployer
   ).deploy();
-  await contractImplementation.deployed();
 
   console.log(
     `Contract ${contractName} deployed to ${contractImplementation.address}`
@@ -154,7 +152,7 @@ async function updateModule(
       .connect(deployer)
       .updateModule(
         contractAddressOld,
-        contractImplementation.address,
+        await contractImplementation.getAddress(),
         contractSelectorsOld,
         contractSelectorsNew
       )
@@ -163,7 +161,7 @@ async function updateModule(
   console.log(`----- Module ${contractName} updated -----`);
 
   instances[networkName].modules[contractName].address =
-    contractImplementation.address;
+    await contractImplementation.getAddress();
   instances[networkName].modules[contractName].selectors = contractSelectorsNew;
 
   return instances;
@@ -171,7 +169,7 @@ async function updateModule(
 
 // eslint-disable-next-line no-unused-vars
 async function upgradeContract(
-  deployer: SignerWithAddress,
+  deployer: HardhatEthersSigner,
   contractName: string,
   networkName: string,
   forceImport?: boolean
@@ -185,7 +183,7 @@ async function upgradeContract(
 
   if (forceImport) {
     const contractFactoryOld = await ethers.getContractFactory(
-      `${contractName}_old`,
+      `${contractName}Old`,
       deployer
     );
 
@@ -193,8 +191,6 @@ async function upgradeContract(
       kind: 'uups'
     });
   }
-
-  console.log(await upgrades.erc1967.getImplementationAddress(oldProxyAddress));
 
   await upgrades.validateImplementation(ContractFactory, {
     kind: 'uups'
@@ -206,43 +202,36 @@ async function upgradeContract(
       kind: 'uups'
     }
   );
-  await upgradedProxy.deployed();
-  console.log(
-    await upgrades.erc1967.getImplementationAddress(upgradedProxy.address)
-  );
 
-  console.log(`----- Contract ${contractName} upgraded -----`);
+  console.log(`----- Contract ${contractName} upgraded to ${await upgrades.erc1967.getImplementationAddress(await upgradedProxy.getAddress())} -----`);
 
   instances[networkName].contracts[contractName].implementation =
-    await upgrades.erc1967.getImplementationAddress(upgradedProxy.address);
+    await upgrades.erc1967.getImplementationAddress(await upgradedProxy.getAddress());
 
   return instances;
 }
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
-  const currentNetwork = 'polygon';
+  let [deployer, user1] = await ethers.getSigners();
+  let currentNetwork = network.name;
 
-  // const deployer = await ethers.getImpersonatedSigner(
-  //   '0x1741eC2915Ab71Fc03492715b5640133dA69420B'
-  // );
+  if (currentNetwork === 'localhost') {
+    currentNetwork = 'polygon';
 
-  // await user1.sendTransaction({
-  //   to: deployer.address,
-  //   value: ethers.utils.parseEther('100')
-  // });
+    // 0x1741eC2915Ab71Fc03492715b5640133dA69420B Deployer
+    // 0x8E58b98d569B0679713273c5105499C249e9bC84 Amoy
+    deployer = await ethers.getImpersonatedSigner(
+      '0x1741eC2915Ab71Fc03492715b5640133dA69420B'
+    );
 
-  const instances: AddressesByNetwork = getAddresses();
+    await user1.sendTransaction({
+      to: deployer.address,
+      value: ethers.parseEther('100')
+    });
+  }
 
   const instances1 = await updateModule(deployer, 'VehicleIdResolver', currentNetwork);
   writeAddresses(instances1, currentNetwork);
-
-  const dcnManagerInstance = await ethers.getContractAt(
-    'DcnManager',
-    instances[currentNetwork].contracts.DcnManager.proxy
-  ) as DcnManager;
-
-  await dcnManagerInstance.connect(deployer).grantRole(C.UPGRADER_ROLE, deployer.address);
 
   const instances2 = await upgradeContract(deployer, 'DcnManager', currentNetwork);
   writeAddresses(instances2, currentNetwork);
