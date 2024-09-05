@@ -11,22 +11,19 @@ describe('Multicall', () => {
     it('Should return node information from resolvers', async () => {
       const { user1, dcnManager, nameResolverInstance, vehicleIdResolverInstance, multicallInstance } = await loadFixture(setupVehicleMinted);
 
-      const nameResolverInterface = ethers.Contract.getInterface(nameResolverInstance.interface);
-      const vehicleIdResolverInterface = ethers.Contract.getInterface(vehicleIdResolverInstance.interface);
-
       await dcnManager
         .connect(user1)
         .mint(user1.address, C.MOCK_LABELS, C.ONE_YEAR, C.MOCK_VEHICLE_TOKEN_ID);
 
-      const getName = nameResolverInterface.encodeFunctionData(
+      const getName = nameResolverInstance.interface.encodeFunctionData(
         'name',
         [mockNodeNamehash]
       );
-      const getVehicleId = vehicleIdResolverInterface.encodeFunctionData(
+      const getVehicleId = vehicleIdResolverInstance.interface.encodeFunctionData(
         'vehicleId',
         [mockNodeNamehash]
       );
-      const getNodeByVehicleId = vehicleIdResolverInterface.encodeFunctionData(
+      const getNodeByVehicleId = vehicleIdResolverInstance.interface.encodeFunctionData(
         'nodeByVehicleId',
         [C.MOCK_VEHICLE_TOKEN_ID]
       );
@@ -35,9 +32,9 @@ describe('Multicall', () => {
 
       expect(results.length).to.be.equal(3);
 
-      const name = ethers.utils.defaultAbiCoder.decode(["string"], results[0])[0];
-      const vehicleId = ethers.utils.defaultAbiCoder.decode(["uint256"], results[1])[0];
-      const nodeNamehash = ethers.utils.defaultAbiCoder.decode(["bytes32"], results[2])[0];
+      const name = nameResolverInstance.interface.getAbiCoder().decode(["string"], results[0])[0];
+      const vehicleId = vehicleIdResolverInstance.interface.getAbiCoder().decode(["uint256"], results[1])[0];
+      const nodeNamehash = vehicleIdResolverInstance.interface.getAbiCoder().decode(["bytes32"], results[2])[0];
 
       expect(name).to.be.equal(C.MOCK_LABELS.join('.'));
       expect(vehicleId).to.be.equal(C.MOCK_VEHICLE_TOKEN_ID);

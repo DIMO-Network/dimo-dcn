@@ -19,11 +19,11 @@ describe('VehicleResolver', () => {
         await resolverInstance.grantRole(C.ADMIN_ROLE, admin.address);
 
         await sharedInstance.connect(admin).setFoundationAddress(foundation.address);
-        await sharedInstance.connect(admin).setDimoToken(mockDimoToken.address);
+        await sharedInstance.connect(admin).setDimoToken(await mockDimoToken.getAddress());
         await sharedInstance.connect(admin).setDcnManager(mockDcnManager.address);
-        await sharedInstance.connect(admin).setDcnRegistry(mockDcnRegistry.address);
+        await sharedInstance.connect(admin).setDcnRegistry(await mockDcnRegistry.getAddress());
 
-        await vehicleIdResolverInstance.connect(admin).setVehicleIdProxyAddress(mockVehicleId.address);
+        await vehicleIdResolverInstance.connect(admin).setVehicleIdProxyAddress(await mockVehicleId.getAddress());
         await mockVehicleId.connect(user1).mint(C.MOCK_VEHICLE_TOKEN_ID);
 
         return {
@@ -44,12 +44,12 @@ describe('VehicleResolver', () => {
     describe('setVehicleIdProxyAddress', () => {
         context('Error handling', () => {
             it('Should revert if caller does not have the ADMIN_ROLE', async () => {
-                const { nonAdmin, vehicleIdResolverInstance, mockVehicleId } = await loadFixture(setup);
+                const { nonAdmin, vehicleIdResolverInstance, mockVehicleId } = await loadFixture(setup);                
 
                 await expect(
                     vehicleIdResolverInstance
                         .connect(nonAdmin)
-                        .setVehicleIdProxyAddress(mockVehicleId.address)
+                        .setVehicleIdProxyAddress(await mockVehicleId.getAddress())
                 ).to.be.revertedWith(
                     `AccessControl: account ${nonAdmin.address.toLowerCase()} is missing role ${C.ADMIN_ROLE
                     }`
@@ -61,7 +61,7 @@ describe('VehicleResolver', () => {
                 await expect(
                     vehicleIdResolverInstance
                         .connect(admin)
-                        .setVehicleIdProxyAddress(ethers.constants.AddressZero)
+                        .setVehicleIdProxyAddress(ethers.ZeroAddress)
                 ).to.be.revertedWith('Non zero address');
             });
         });
@@ -73,10 +73,10 @@ describe('VehicleResolver', () => {
                 await expect(
                     vehicleIdResolverInstance
                         .connect(admin)
-                        .setVehicleIdProxyAddress(mockVehicleId.address)
+                        .setVehicleIdProxyAddress(await mockVehicleId.getAddress())
                 )
                     .to.emit(vehicleIdResolverInstance, 'VehicleIdProxySet')
-                    .withArgs(mockVehicleId.address);
+                    .withArgs(await mockVehicleId.getAddress());
             });
         });
     });
@@ -87,7 +87,7 @@ describe('VehicleResolver', () => {
         context('Error handling', () => {
             it('Should revert if caller is not the DCN Manager', async () => {
                 const { user1, nonDcnManager, mockDcnRegistry, vehicleIdResolverInstance } = await loadFixture(setup);
-                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR);
+                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR);
 
                 await expect(
                     vehicleIdResolverInstance
@@ -97,7 +97,7 @@ describe('VehicleResolver', () => {
             });
             it('Should revert if caller is not the owner of the node', async () => {
                 const { user1, user2, mockDcnRegistry, vehicleIdResolverInstance } = await loadFixture(setup);
-                await mockDcnRegistry.mint(user2.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR);
+                await mockDcnRegistry.mint(user2.address, [C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR);
 
                 await expect(
                     vehicleIdResolverInstance
@@ -108,7 +108,7 @@ describe('VehicleResolver', () => {
             it('Should revert if DCN node and Vehicle Id owners does not match', async () => {
                 const { user2, mockDcnManager, mockDcnRegistry, vehicleIdResolverInstance, mockVehicleId } = await loadFixture(setup);
                 await mockVehicleId.connect(user2).mint(2);
-                await mockDcnRegistry.mint(user2.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR);
+                await mockDcnRegistry.mint(user2.address, [C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR);
 
                 await expect(
                     vehicleIdResolverInstance
@@ -122,7 +122,7 @@ describe('VehicleResolver', () => {
             it('Should correctly set the vehicle Id', async () => {
                 const { user1, mockDcnManager, mockDcnRegistry, vehicleIdResolverInstance, mockVehicleId } = await loadFixture(setup);
                 await mockVehicleId.connect(user1).mint(2);
-                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR);
+                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR);
 
                 await vehicleIdResolverInstance
                     .connect(mockDcnManager)
@@ -133,7 +133,7 @@ describe('VehicleResolver', () => {
             it('Should correctly set the node', async () => {
                 const { user1, mockDcnManager, mockDcnRegistry, vehicleIdResolverInstance, mockVehicleId } = await loadFixture(setup);
                 await mockVehicleId.connect(user1).mint(2);
-                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR);
+                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR);
 
                 await vehicleIdResolverInstance
                     .connect(mockDcnManager)
@@ -147,7 +147,7 @@ describe('VehicleResolver', () => {
             it('Should emit VehicleIdChanged event with correct params', async () => {
                 const { user1, mockDcnManager, mockDcnRegistry, vehicleIdResolverInstance, mockVehicleId } = await loadFixture(setup);
                 await mockVehicleId.connect(user1).mint(2);
-                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR);
+                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR);
 
                 await expect(
                     vehicleIdResolverInstance
@@ -166,7 +166,7 @@ describe('VehicleResolver', () => {
         context('Error handling', () => {
             it('Should revert if caller is not the DCN Manager', async () => {
                 const { user1, nonDcnManager, mockDcnRegistry, vehicleIdResolverInstance } = await loadFixture(setup);
-                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR);
+                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR);
 
                 await expect(
                     vehicleIdResolverInstance
@@ -176,7 +176,7 @@ describe('VehicleResolver', () => {
             });
             it('Should revert if caller is not the owner of the node', async () => {
                 const { user1, user2, mockDcnRegistry, vehicleIdResolverInstance } = await loadFixture(setup);
-                await mockDcnRegistry.mint(user2.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR);
+                await mockDcnRegistry.mint(user2.address, [C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR);
 
                 await expect(
                     vehicleIdResolverInstance
@@ -187,7 +187,7 @@ describe('VehicleResolver', () => {
             it('Should revert if DCN node and Vehicle Id owners does not match', async () => {
                 const { user1, user2, mockDcnRegistry, mockVehicleId, vehicleIdResolverInstance } = await loadFixture(setup);
                 await mockVehicleId.connect(user2).mint(2);
-                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR);
+                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR);
 
                 await expect(
                     vehicleIdResolverInstance
@@ -200,7 +200,7 @@ describe('VehicleResolver', () => {
         context('State', () => {
             it('Should correctly reset vehicle ID', async () => {
                 const { user1, mockDcnRegistry, vehicleIdResolverInstance } = await loadFixture(setup);
-                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR);
+                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR);
                 await vehicleIdResolverInstance.connect(user1).setVehicleId(mockTldNamehash, 1);
 
                 expect(await vehicleIdResolverInstance.vehicleId(mockTldNamehash)).to.be.equal(1);
@@ -211,14 +211,14 @@ describe('VehicleResolver', () => {
                     .resetVehicleId(mockTldNamehash, 1);
 
                 expect(await vehicleIdResolverInstance.vehicleId(mockTldNamehash)).to.be.equal(0);
-                expect(await vehicleIdResolverInstance.nodeByVehicleId(1)).to.be.equal(ethers.constants.HashZero);
+                expect(await vehicleIdResolverInstance.nodeByVehicleId(1)).to.be.equal(ethers.ZeroHash);
             })
         });
 
         context('Events', () => {
             it('Should emit VehicleIdChanged event with correct params', async () => {
                 const { user1, mockDcnRegistry, vehicleIdResolverInstance } = await loadFixture(setup);
-                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.constants.AddressZero, C.ONE_YEAR);
+                await mockDcnRegistry.mint(user1.address, [C.MOCK_TLD], ethers.ZeroAddress, C.ONE_YEAR);
                 await vehicleIdResolverInstance.connect(user1).setVehicleId(mockTldNamehash, 1);
 
                 await expect(

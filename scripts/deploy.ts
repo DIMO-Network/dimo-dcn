@@ -1,9 +1,16 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { ethers, upgrades } from 'hardhat';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 
-import { DcnManager, DcnRegistry, ResolverRegistry, Shared, VehicleIdResolver } from '../typechain-types';
+import {
+  DcnManager,
+  DcnRegistry,
+  PriceManager,
+  ResolverRegistry,
+  Shared,
+  VehicleIdResolver
+} from '../typechain-types';
 import { getSelectors, AddressesByNetwork } from '../utils';
 import * as C from './data/deployConstants';
 
@@ -26,7 +33,7 @@ function writeAddresses(addresses: AddressesByNetwork, networkName: string) {
 }
 
 async function deployModules(
-  deployer: SignerWithAddress
+  deployer: HardhatEthersSigner
 ): Promise<AddressesByNetwork> {
   console.log('\n----- Deploying contracts -----\n');
 
@@ -43,15 +50,14 @@ async function deployModules(
   const DIMORegistry = await ethers.getContractFactory("ResolverRegistry");
   const resolverRegistryImplementation = await DIMORegistry.connect(
     deployer
-  ).deploy();
-  await resolverRegistryImplementation.deployed();
+  ).deploy();  
 
   console.log(
     `Contract ResolverRegistry deployed to ${resolverRegistryImplementation.address}`
   );
 
   instances[C.networkName].modules.ResolverRegistry.address =
-    resolverRegistryImplementation.address;
+    await resolverRegistryImplementation.getAddress();
 
   for (const contractNameArg of contractNameArgs) {
     const ContractFactory = await ethers.getContractFactory(
@@ -60,14 +66,13 @@ async function deployModules(
     const contractImplementation = await ContractFactory.connect(
       deployer
     ).deploy(...contractNameArg.args);
-    await contractImplementation.deployed();
 
     console.log(
       `Contract ${contractNameArg.name} deployed to ${contractImplementation.address}`
     );
 
     instances[C.networkName].modules[contractNameArg.name].address =
-      contractImplementation.address;
+      await contractImplementation.getAddress();
   }
 
   console.log('\n----- Contracts deployed -----');
@@ -76,7 +81,7 @@ async function deployModules(
 }
 
 async function deployContracts(
-  deployer: SignerWithAddress
+  deployer: HardhatEthersSigner
 ): Promise<AddressesByNetwork> {
   console.log('\n----- Deploying contracts -----\n');
 
@@ -117,16 +122,14 @@ async function deployContracts(
       }
     );
 
-    await contractProxy.deployed();
-
     console.log(
       `Contract ${contractNameArg.name} deployed to ${contractProxy.address}`
     );
 
     instances[C.networkName].contracts[contractNameArg.name].proxy =
-      contractProxy.address;
+      await contractProxy.getAddress(); 
     instances[C.networkName].contracts[contractNameArg.name].implementation =
-      await upgrades.erc1967.getImplementationAddress(contractProxy.address);
+      await upgrades.erc1967.getImplementationAddress(await contractProxy.getAddress());
   }
 
   // Deploying DcnManager
@@ -155,16 +158,14 @@ async function deployContracts(
     }
   );
 
-  await contractProxy.deployed();
-
   console.log(
     `Contract DcnManager deployed to ${contractProxy.address}`
   );
 
   instances[C.networkName].contracts.DcnManager.proxy =
-    contractProxy.address;
+    await contractProxy.getAddress();
   instances[C.networkName].contracts.DcnManager.implementation =
-    await upgrades.erc1967.getImplementationAddress(contractProxy.address);
+    await upgrades.erc1967.getImplementationAddress(await contractProxy.getAddress());
 
   console.log('\n----- Contracts deployed -----');
 
@@ -172,14 +173,14 @@ async function deployContracts(
 }
 
 async function addModule(
-  deployer: SignerWithAddress
+  deployer: HardhatEthersSigner
 ): Promise<AddressesByNetwork> {
   const instances: AddressesByNetwork = getAddresses();
 
   const resolverRegistryInstance = await ethers.getContractAt(
     'ResolverRegistry',
     instances[C.networkName].modules.ResolverRegistry.address
-  ) as ResolverRegistry;
+  ) as unknown as ResolverRegistry;
 
 
   const contractsNameImpl = Object.keys(
@@ -216,17 +217,17 @@ async function addModule(
   return instances;
 }
 
-async function setup(deployer: SignerWithAddress) {
+async function setup(deployer: HardhatEthersSigner) {
   const instances: AddressesByNetwork = getAddresses();
 
   const vehicleIdResolverInstance = await ethers.getContractAt(
     'VehicleIdResolver',
     instances[C.networkName].modules.ResolverRegistry.address
-  ) as VehicleIdResolver;
+  ) as unknown as VehicleIdResolver;
   const sharedInstance = await ethers.getContractAt(
     'Shared',
     instances[C.networkName].modules.ResolverRegistry.address
-  ) as Shared;
+  ) as unknown as Shared;
 
   console.log('\n----- Setting vehicle ID proxy address -----');
   await vehicleIdResolverInstance.connect(deployer).setVehicleIdProxyAddress(C.dimoVehicleIdAddress[C.networkName]);
@@ -249,25 +250,25 @@ async function setup(deployer: SignerWithAddress) {
   console.log('----- DcnRegistry address set -----\n');
 }
 
-async function grantRoles(deployer: SignerWithAddress) {
+async function grantRoles(deployer: HardhatEthersSigner) {
   const instances: AddressesByNetwork = getAddresses();
 
   const dcnRegistryInstance = await ethers.getContractAt(
     'DcnRegistry',
     instances[C.networkName].contracts.DcnRegistry.proxy
-  ) as DcnRegistry;
+  ) as unknown as DcnRegistry;
   const resolverRegistryInstance = await ethers.getContractAt(
     'ResolverRegistry',
     instances[C.networkName].modules.ResolverRegistry.address
-  ) as ResolverRegistry;
+  ) as unknown as ResolverRegistry;
   const dcnManagerInstance = await ethers.getContractAt(
     'DcnManager',
     instances[C.networkName].contracts.DcnManager.proxy
-  ) as DcnManager;
+  ) as unknown as DcnManager;
   const priceManagerInstance = await ethers.getContractAt(
     'PriceManager',
     instances[C.networkName].contracts.PriceManager.proxy
-  );
+  )as unknown as PriceManager;
 
   console.log('\n----- Granting roles -----');
 
@@ -290,7 +291,7 @@ async function grantRoles(deployer: SignerWithAddress) {
 }
 
 async function upgradeContract(
-  deployer: SignerWithAddress,
+  deployer: HardhatEthersSigner,
   contractName: string,
   networkName: string,
   forceImport?: boolean
@@ -326,15 +327,14 @@ async function upgradeContract(
       kind: 'uups'
     }
   );
-  await upgradedProxy.deployed();
   console.log(
-    await upgrades.erc1967.getImplementationAddress(upgradedProxy.address)
+    await upgrades.erc1967.getImplementationAddress(await upgradedProxy.getAddress())
   );
 
   console.log(`----- Contract ${contractName} upgraded -----`);
 
   instances[networkName].contracts[contractName].implementation =
-    await upgrades.erc1967.getImplementationAddress(upgradedProxy.address);
+    await upgrades.erc1967.getImplementationAddress(await upgradedProxy.getAddress());
 
   return instances;
 }
@@ -342,14 +342,14 @@ async function upgradeContract(
 async function main() {
   const [deployer] = await ethers.getSigners();
 
-  // const instances = await deployModules(deployer);
-  // writeAddresses(instances, C.networkName);
-  // const instancesWithSelectors = await addModule(deployer);
-  // writeAddresses(instancesWithSelectors, C.networkName);
-  // const contractInstances = await deployContracts(deployer);
-  // writeAddresses(contractInstances, C.networkName);
+  const instances = await deployModules(deployer);
+  writeAddresses(instances, C.networkName);
+  const instancesWithSelectors = await addModule(deployer);
+  writeAddresses(instancesWithSelectors, C.networkName);
+  const contractInstances = await deployContracts(deployer);
+  writeAddresses(contractInstances, C.networkName);
 
-  // await grantRoles(deployer);
+  await grantRoles(deployer);
   await setup(deployer);
 }
 

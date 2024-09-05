@@ -19,9 +19,9 @@ describe('NameResolver', () => {
         await resolverInstance.grantRole(C.ADMIN_ROLE, admin.address);
 
         await sharedInstance.connect(admin).setFoundationAddress(foundation.address);
-        await sharedInstance.connect(admin).setDimoToken(mockDimoToken.address);
+        await sharedInstance.connect(admin).setDimoToken(await mockDimoToken.getAddress());
         await sharedInstance.connect(admin).setDcnManager(mockDcnManager.address);
-        await sharedInstance.connect(admin).setDcnRegistry(mockDcnRegistry.address);
+        await sharedInstance.connect(admin).setDcnRegistry(await mockDcnRegistry.getAddress());
 
         await mockVehicleId.connect(user1).mint(C.MOCK_VEHICLE_TOKEN_ID);
 
